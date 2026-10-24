@@ -167,27 +167,6 @@ h1 em { letter-spacing: -5px; white-space: nowrap; }
 .life-footnote { margin: 30px 0 0; color: #9fac95; font-size: 12px; text-align: center; }
 .life-footnote span { margin-right: 8px; color: var(--lime); font-size: 17px; }
 
-/* A separate scroll-driven design study keeps hero content always available. */
-.inside { padding-block: 70px; overflow: clip; border-block: 1px solid #b8d19c14; background: radial-gradient(ellipse at 29% 50%, #30422626, transparent 52%), #0b100c; }
-.inside-grid { display: grid; grid-template-columns: 1.1fr 1fr; align-items: center; gap: 80px; }
-.inside-art { position: relative; height: 625px; min-width: 0; }
-.inside-art-label { position: absolute; top: 3px; left: 24px; color: #9aa98b; font-size: 9px; }
-.inside-device { width: 100%; height: 100%; --explode: 0; }
-.inside-device .assembly { transform: rotateX(24deg) rotateY(-34deg) rotateZ(6deg) scale(.88); }
-.inside-device .device-shell { transform: translate3d(calc(var(--explode) * -64px), calc(var(--explode) * -100px), calc(10px + var(--explode) * 130px)); }
-.inside-device .device-glass { transform: translate3d(calc(var(--explode) * -18px), calc(var(--explode) * -18px), calc(-8px + var(--explode) * 65px)); }
-.inside-device .device-board { transform: translate3d(calc(var(--explode) * 43px), calc(var(--explode) * 60px), -20px); }
-.inside-device .device-back { transform: translate3d(calc(var(--explode) * 86px), calc(var(--explode) * 130px), calc(-35px - var(--explode) * 58px)); }
-.inside-device .device-loop { transform: translate3d(calc(var(--explode) * 86px), calc(var(--explode) * 130px), calc(-35px - var(--explode) * 58px)); }
-.assembly-caption { position: absolute; bottom: 3px; left: 24px; color: #a1ae94; font-family: var(--display); font-size: 9px; letter-spacing: 1.3px; }
-.inside-copy h2 { margin: 20px 0 23px; }
-.inside-copy > .section-intro { max-width: 365px; }
-.design-notes { display: grid; gap: 0; margin: 26px 0 22px; padding: 0; list-style: none; }
-.design-notes li { display: flex; align-items: flex-start; gap: 20px; padding: 19px 0; border-bottom: 1px solid var(--line); }
-.design-notes li > span { padding-top: 2px; }
-.design-notes h3 { margin: 0 0 5px; font-family: var(--body); font-size: 14px; font-weight: 500; }
-.design-notes p { max-width: 330px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.8; }
-.inside-copy > .text-link { font-size: 12px; }
 
 /* A tiny room, drawn with just CSS, for the original pixel creature. */
 .playground { padding-bottom: 42px; }
@@ -395,10 +374,6 @@ dialog > p:not(.eyebrow) { margin-bottom: 26px; color: #b8c4ac; font-size: 13px;
   .hero-coordinates { display: none; }
   .loop-card { padding: 23px 23px 27px; }
   .loop-card h3 { font-size: 20px; }
-  .inside-grid { gap: 45px; grid-template-columns: 1fr 1fr; }
-  .inside-art { height: 610px; }
-  .inside-device .assembly { transform: rotateX(24deg) rotateY(-34deg) rotateZ(6deg) scale(.8); }
-  .inside-art-label, .assembly-caption { left: 0; }
   .habitat { padding-inline: 23px; }
   .focus-card { padding-inline: 25px; }
   .room-window { left: 15px; }
@@ -437,14 +412,6 @@ dialog > p:not(.eyebrow) { margin-bottom: 26px; color: #b8c4ac; font-size: 13px;
   .card-meta > span:last-child { display: none; }
   .loop-card h3 { font-size: 19px; }
   .loop-card p { font-size: 12px; }
-  .inside { padding-block: 58px; }
-  .inside-grid { gap: 30px; }
-  .inside-art { height: 630px; margin-left: -10px; }
-  .inside-device .assembly { left: calc(50% - 160px); transform: rotateX(24deg) rotateY(-34deg) rotateZ(6deg) scale(.68); }
-  .inside-art-label { top: 45px; max-width: 200px; font-size: 8px; }
-  .assembly-caption { bottom: 48px; max-width: 200px; font-size: 8px; }
-  .inside-copy h2 { font-size: 44px; letter-spacing: -2.4px; }
-  .design-notes li { gap: 13px; padding-block: 17px; }
   .play-grid { gap: 18px; }
   .habitat { padding: 24px 19px 20px; }
   .habitat-top h3 { font-size: 17px; }
@@ -531,19 +498,6 @@ dialog > p:not(.eyebrow) { margin-bottom: 26px; color: #b8c4ac; font-size: 13px;
   .loop-card h3 { max-width: calc(100% - 10px); margin-bottom: 10px; font-size: 23px; }
   .loop-card p { max-width: 380px; font-size: 13px; }
   .life-footnote { max-width: 310px; margin: 25px auto 0; font-size: 11px; line-height: 1.8; }
-  .inside { padding-block: 57px; }
-  .inside-grid { grid-template-columns: 1fr; gap: 0; }
-  .inside-copy { grid-row: 1; }
-  .inside-copy h2 { font-size: 45px; }
-  .inside-copy .section-intro { max-width: 340px; }
-  .design-notes { margin: 23px 0 16px; }
-  .design-notes li { gap: 18px; padding-block: 16px; }
-  .design-notes h3 { font-size: 14px; }
-  .design-notes p { max-width: 390px; font-size: 12px; }
-  .inside-art { height: 540px; margin: 22px 0 0; }
-  .inside-art-label { top: 12px; left: 0; max-width: none; font-size: 7px; }
-  .inside-device .assembly { top: calc(50% - 185px); left: calc(50% - 170px); transform: rotateX(24deg) rotateY(-34deg) rotateZ(6deg) scale(.74); }
-  .assembly-caption { bottom: -4px; left: 0; max-width: none; font-size: 7px; }
   .play-intro { margin: 0; }
   .demo-label { margin-top: 15px; font-size: 9px; letter-spacing: .5px; }
   .play-grid { grid-template-columns: 1fr; gap: 18px; }
@@ -633,8 +587,6 @@ dialog > p:not(.eyebrow) { margin-bottom: 26px; color: #b8c4ac; font-size: 13px;
   .hero-device .device-buttons { left: 47px; gap: 15px; bottom: 52px; }
   .hero-copy .eyebrow { font-size: 7px; letter-spacing: 1.1px; }
   .hero-note { font-size: 10px; }
-  .inside-device .assembly { transform: rotateX(24deg) rotateY(-34deg) rotateZ(6deg) scale(.66); }
-  .inside-art { height: 493px; }
   .habitat, .focus-card { padding-inline: 20px; }
   .habitat-top h3 { font-size: 19px; }
   .room-window { left: 0; width: 71px; height: 95px; }

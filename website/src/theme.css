@@ -1,0 +1,624 @@
+/*
+ * Two palettes, one little world.
+ * --lime is the text accent; --accent-fill is a bright lime control surface.
+ * --accent-ink (also --on-accent) is text ON that fill, in both themes.
+ * Physical shell colors stay on <body>.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #080b0a;
+  --ink: #e9eae1;
+  --muted: #a3afa5;
+  --soft: #818e83;
+  --lime: #d7ff74;
+  --line: #d7e9d222;
+  --surface: #101510;
+  --surface-strong: #1a2318;
+  --surface-soft: #0b100c;
+  --border: #d7e9d222;
+  --accent-fill: #d7ff74;
+  --accent-fill-hover: #e5ffa6;
+  --accent-ink: #18210e;
+  --on-accent: var(--accent-ink);
+  --control-border: #b0bda05c;
+  --error: #f3c3a0;
+  --warning: #ebc399;
+  --hardware-grid: #b6d49616;
+  --hardware-stage-bg: #0e1510;
+  --hardware-card-bg: #121b15f2;
+  --shadow: 0 24px 72px #0006;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --background: #f6f5ee;
+  --ink: #26382b;
+  --muted: #52634f;
+  --soft: #596853;
+  --lime: #365c3d;
+  --line: #394e332b;
+  --surface: #f0f2e8;
+  --surface-strong: #fffef9;
+  --surface-soft: #e8eddf;
+  --border: #394e3333;
+  --accent-fill: #d7ff74;
+  --accent-fill-hover: #cbef72;
+  --accent-ink: #18210e;
+  --on-accent: var(--accent-ink);
+  --control-border: #85947b;
+  --error: #983f2d;
+  --warning: #825020;
+  --hardware-grid: #52693c1c;
+  --hardware-stage-bg: #edf0e4;
+  --hardware-card-bg: #fffef9f2;
+  --shadow: 0 18px 50px #34452b0f, 0 2px 8px #34452b06;
+}
+
+/* Bright button fills stay independent of the light palette's forest text accent. */
+:root[data-theme] {
+  accent-color: var(--lime);
+}
+
+:root[data-theme] ::selection {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+}
+
+:root[data-theme] :is(.button-primary, .skip-link) {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+}
+
+:root[data-theme] .button-primary:hover {
+  background: var(--accent-fill-hover);
+}
+
+/* An action button, not an ambiguous pressed/unpressed switch. */
+.theme-toggle.icon-button {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-color: var(--border, #d7e9d222);
+  background: var(--surface, #101510);
+  color: var(--ink);
+  transition: background .2s, border-color .2s, color .2s;
+}
+
+.theme-toggle.icon-button:hover {
+  border-color: var(--lime, #d7ff74);
+  background: var(--surface-strong, #1a2318);
+  color: var(--lime, #d7ff74);
+}
+
+.theme-toggle svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+.site-header .logo,
+.site-header .header-adopt {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Leave room for the new control without squeezing any tap targets. */
+@media (min-width: 681px) {
+  .site-header {
+    gap: 20px;
+  }
+
+  .site-header nav {
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 680px) {
+  .site-header {
+    gap: 12px;
+  }
+
+  .site-header .theme-toggle {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 380px) {
+  .site-header {
+    gap: 8px;
+  }
+
+  .site-header .logo {
+    gap: 7px;
+  }
+
+  .site-header .header-adopt {
+    gap: 8px;
+    padding-inline: 10px;
+  }
+}
+
+/* Paper, forest ink, and fine edges. Dark mode keeps the original stylesheet. */
+:root[data-theme="light"] .button-primary {
+  border-color: #94ad5980;
+  box-shadow: 0 3px 9px #42572d0c, inset 0 1px 0 #ffffff66;
+}
+
+:root[data-theme="light"] .button-outline {
+  border-color: var(--control-border);
+  color: var(--ink);
+}
+
+:root[data-theme="light"] .button-outline:hover {
+  border-color: var(--lime);
+  background: #e5edd8;
+  color: var(--lime);
+}
+
+:root[data-theme="light"] .text-link {
+  border-color: var(--control-border);
+  color: var(--lime);
+}
+
+:root[data-theme="light"] .text-link:hover {
+  border-color: #25452d;
+  color: #25452d;
+}
+
+:root[data-theme="light"] .icon-button {
+  border-color: #82947480;
+  background: #fffef980;
+  color: var(--lime);
+}
+
+:root[data-theme="light"] .icon-button:hover {
+  border-color: var(--lime);
+  background: #e5edd8;
+}
+
+:root[data-theme="light"] .live-dot {
+  box-shadow: 0 0 0 3px #365c3d0d;
+}
+
+:root[data-theme="light"] .site-header nav a {
+  color: var(--muted);
+}
+
+:root[data-theme="light"] .site-header nav a:hover {
+  color: var(--lime);
+}
+
+/* The hero is lit like a small product photograph, not a recolored dark card. */
+:root[data-theme="light"] .hero {
+  background: radial-gradient(ellipse at 78% 44%, #d9e4c980, transparent 54%);
+}
+
+:root[data-theme="light"] .orbit {
+  border-color: #62754b24;
+}
+
+:root[data-theme="light"] :is(.hero-note, .art-caption, .hero-coordinates, .assembly-caption) {
+  color: var(--soft);
+}
+
+:root[data-theme="light"] :is(.art-label, .device-callout, .hero-bottom, .inside-art-label) {
+  color: var(--muted);
+}
+
+:root[data-theme="light"] .callout-line {
+  background: #788e5c70;
+}
+
+:root[data-theme="light"] .circle-arrow {
+  border-color: var(--control-border);
+}
+
+/* Screens and electronics remain physical dark materials in either theme. */
+:root[data-theme="light"] :is(.device-screen, .device-chip) {
+  color-scheme: dark;
+  --lime: #d7ff74;
+  --ink: #e9eae1;
+  --muted: #b7ce97;
+}
+
+:root[data-theme="light"] .device-screen {
+  color: var(--ink);
+}
+
+:root[data-theme="light"] .device-shell {
+  box-shadow: inset 7px 3px 11px #faffdd9c, inset -12px -8px 15px #3f4c3b88,
+    10px 12px 0 var(--shell-shadow), 13px 14px 0 var(--shell-deep), 20px 30px 45px #34452b2b;
+}
+
+:root[data-theme="light"] .device-back {
+  box-shadow: 14px 14px 0 #172016, 16px 16px 0 #556347, 20px 24px 40px #34452b24;
+}
+
+/* A trio of softly different papers for the daily rituals. */
+:root[data-theme="light"] .loop-card {
+  border-color: var(--border);
+  background: linear-gradient(135deg, #edf1e3, #f5f6ee 80%);
+  box-shadow: var(--shadow);
+}
+
+:root[data-theme="light"] .loop-card:nth-child(2) {
+  background: linear-gradient(135deg, #e8efe5, #f2f5ee 80%);
+}
+
+:root[data-theme="light"] .loop-card:nth-child(3) {
+  background: linear-gradient(135deg, #f0eddd, #f7f5eb 80%);
+}
+
+:root[data-theme="light"] :is(.card-meta, .loop-card p, .life-footnote) {
+  color: var(--muted);
+}
+
+:root[data-theme="light"] :is(.mini-creature, .clock-face) {
+  border-color: #557444b3;
+}
+
+:root[data-theme="light"] .clock-face::before {
+  border-color: #55744466;
+}
+
+:root[data-theme="light"] .sprout-art {
+  background: var(--lime);
+}
+
+:root[data-theme="light"] .sprout-art::before,
+:root[data-theme="light"] .sprout-art::after {
+  border-color: #557444b3;
+}
+
+:root[data-theme="light"] .sprout-art i {
+  border-color: #55744466;
+}
+
+:root[data-theme="light"] .inside {
+  border-color: var(--line);
+  background: radial-gradient(ellipse at 29% 50%, #dce6c66b, transparent 58%), var(--surface);
+}
+
+/* Only the room tint follows the shell choice; the actual shell palette is intact. */
+:root[data-theme="light"] body[data-shell="sage"] {
+  --habitat-tint: #e2e9d3;
+}
+
+:root[data-theme="light"] body[data-shell="cream"] {
+  --habitat-tint: #eee4d1;
+}
+
+:root[data-theme="light"] body[data-shell="lavender"] {
+  --habitat-tint: #e5dfee;
+}
+
+:root[data-theme="light"] .habitat {
+  border-color: var(--border);
+  background: radial-gradient(ellipse at 50% 22%, #fffdf5b3, transparent 70%),
+    linear-gradient(145deg, var(--habitat-tint), var(--surface));
+  box-shadow: var(--shadow);
+}
+
+:root[data-theme="light"] .room-window {
+  border-color: #98ab87;
+  background: linear-gradient(#d8e5c7, #eff1d6);
+  box-shadow: 0 0 0 1px #65794a24, 0 4px 12px #45612a0a;
+}
+
+:root[data-theme="light"] .room-window::before,
+:root[data-theme="light"] .room-window::after {
+  background: #96a580;
+  opacity: 1;
+}
+
+:root[data-theme="light"] .room-sun {
+  background: #e8ce83;
+  box-shadow: 0 0 24px #f4d68f55;
+}
+
+:root[data-theme="light"] .window-hill {
+  background: #aabd8b;
+}
+
+:root[data-theme="light"] .hill-two {
+  background: #819c6c;
+}
+
+:root[data-theme="light"] .room-shelf {
+  background: #9b977c;
+}
+
+:root[data-theme="light"] .room-book {
+  background: #8d9a6d;
+  box-shadow: 11px 2px 0 #c0b995;
+}
+
+:root[data-theme="light"] .room-rock {
+  background: #9fa691;
+}
+
+:root[data-theme="light"] .room-floor {
+  border-color: #6a825033;
+  background: repeating-linear-gradient(90deg, transparent 0 59px, #7a8d6420 60px 61px);
+}
+
+:root[data-theme="light"] .room-rug {
+  border-color: #8ca27877;
+  background: repeating-linear-gradient(0deg, #b9c99c50 0 3px, #a8bc8d50 4px 5px);
+}
+
+:root[data-theme="light"] .room-pet .creature {
+  filter: drop-shadow(0 5px 6px #4b633528);
+}
+
+/* A fine silhouette edge retains the original lime pixel art on a pale wall. */
+:root[data-theme="light"] .room-pet .creature-body svg > path:first-child {
+  stroke: #66814a;
+  stroke-width: .7;
+  paint-order: stroke;
+}
+
+:root[data-theme="light"] .room-pet .creature-shadow {
+  background: #52633c24;
+}
+
+:root[data-theme="light"] .room-dust {
+  color: #6f885680;
+}
+
+:root[data-theme="light"] .plant-pot {
+  border-color: #c8bf9e;
+  background: #b7ad8a;
+}
+
+:root[data-theme="light"] .plant-stem {
+  background: #687f4f;
+}
+
+:root[data-theme="light"] .plant-leaf {
+  background: #90a96b;
+}
+
+:root[data-theme="light"] .room-lamp::before {
+  background: #d1c68d;
+}
+
+:root[data-theme="light"] .room-lamp::after {
+  background: #8d956b;
+}
+
+:root[data-theme="light"] .room-lamp span {
+  background: #9aa37a;
+}
+
+:root[data-theme="light"] .room.has-lamp .room-lamp::before {
+  box-shadow: 0 15px 37px #e6d89e4d;
+}
+
+:root[data-theme="light"] .room-notebook {
+  border-color: #8da06d;
+  background: #c6d6a7;
+  color: #3d5531;
+}
+
+:root[data-theme="light"] :is(.pet-message, .bond-row .eyebrow) {
+  color: var(--ink);
+}
+
+:root[data-theme="light"] .interaction-buttons button {
+  border-color: #93a582;
+  background: #fffef9b3;
+  color: var(--ink);
+}
+
+:root[data-theme="light"] .interaction-buttons button:hover {
+  border-color: #526f3e;
+  background: #e4edcf;
+}
+
+:root[data-theme="light"] .interaction-buttons button:active {
+  background: #dae6c7;
+}
+
+:root[data-theme="light"] progress {
+  background: #bfcca9;
+}
+
+:root[data-theme="light"] progress::-webkit-progress-bar {
+  background: #bfcca9;
+}
+
+:root[data-theme="light"] :is(.habitat-top .eyebrow, .room-caption, .demo-label),
+:root[data-theme="light"] #bond-count {
+  color: var(--muted);
+}
+
+/* Focus, native form controls, timer states, and honest local-save feedback. */
+:root[data-theme="light"] .focus-card {
+  border-color: var(--border);
+  background: linear-gradient(150deg, var(--surface-strong), #f3f4eb);
+  box-shadow: var(--shadow);
+}
+
+:root[data-theme="light"] :is(input[type="text"], .duration-options label > span, .shell-options label > span) {
+  border-color: var(--control-border);
+  background: var(--surface-strong);
+  color: var(--ink);
+}
+
+:root[data-theme="light"] input[type="text"] {
+  caret-color: var(--lime);
+  box-shadow: 0 1px 3px #34452b08;
+}
+
+:root[data-theme="light"] input[type="text"]::placeholder {
+  color: var(--soft);
+}
+
+:root[data-theme="light"] input[type="text"]:hover {
+  border-color: #687f5d;
+}
+
+:root[data-theme="light"] input[type="text"]:focus {
+  border-color: var(--lime);
+}
+
+:root[data-theme="light"] input[type="text"][aria-invalid="true"] {
+  border-color: var(--error);
+}
+
+:root[data-theme="light"] input[type="text"]:-webkit-autofill {
+  -webkit-text-fill-color: var(--ink);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface-strong) inset;
+}
+
+:root[data-theme="light"] :is(.duration-options, .shell-options) label:hover > span {
+  border-color: #6f865e;
+  background: var(--surface-soft);
+}
+
+:root[data-theme="light"] :is(.duration-options, .shell-options) input:checked + span {
+  border-color: #52733d;
+  background: #e5eed4;
+  color: #2e4f32;
+  box-shadow: inset 0 0 0 1px #52733d;
+}
+
+:root[data-theme="light"] .swatch {
+  box-shadow: inset 0 0 0 1px #34452b26;
+}
+
+:root[data-theme="light"] :is(.focus-intro, .field-hint, .preview-hint, .timer-note, .completion-panel p) {
+  color: var(--muted);
+}
+
+:root[data-theme="light"] .field-error {
+  color: var(--error);
+}
+
+:root[data-theme="light"] .preview-button {
+  color: var(--lime);
+}
+
+:root[data-theme="light"] .preview-button:hover {
+  background: #365c3d08;
+  color: #25452d;
+}
+
+:root[data-theme="light"] .focus-status {
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+:root[data-theme="light"] #session-context {
+  color: var(--muted);
+}
+
+:root[data-theme="light"] #session-task {
+  color: var(--ink);
+}
+
+:root[data-theme="light"] .completion-panel h4 {
+  color: var(--lime);
+}
+
+:root[data-theme="light"] body[data-focus="awaiting"] .focus-card {
+  border-color: #90a578;
+}
+
+:root[data-theme="light"] .persistence-status {
+  color: var(--muted);
+}
+
+:root[data-theme="light"] .status-dot {
+  background: #5a7943;
+}
+
+:root[data-theme="light"] .persistence-status:is([data-status="unavailable"], [data-status="recovered"]) {
+  color: var(--warning);
+}
+
+:root[data-theme="light"] .persistence-status:is([data-status="unavailable"], [data-status="recovered"]) .status-dot {
+  background: var(--warning);
+}
+
+/* Saved and empty memories, questions, and a final patch of morning light. */
+:root[data-theme="light"] :is(.win-totals span, .wins-empty p, .win p, .wins-footnote p) {
+  color: var(--muted);
+}
+
+:root[data-theme="light"] .empty-spark {
+  color: var(--lime);
+}
+
+:root[data-theme="light"] .forget-win {
+  color: var(--muted);
+}
+
+:root[data-theme="light"] .forget-win:hover {
+  background: #f2e4da;
+  color: var(--error);
+}
+
+:root[data-theme="light"] .wins-footnote .text-link {
+  border-color: var(--control-border);
+  color: var(--muted);
+}
+
+:root[data-theme="light"] .wins-footnote .text-link:hover {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+:root[data-theme="light"] .faq-list summary:hover,
+:root[data-theme="light"] .faq-list details[open] summary {
+  color: var(--lime);
+}
+
+:root[data-theme="light"] .final-cta {
+  border-color: var(--line);
+  background: radial-gradient(ellipse at 50% 105%, #d9e5bd99, transparent 70%), #eff1e6;
+}
+
+:root[data-theme="light"] .final-cta > p:last-child,
+:root[data-theme="light"] .site-footer p,
+:root[data-theme="light"] .site-footer p span {
+  color: var(--soft);
+}
+
+/* Native dialogs keep their focus/escape behavior; only their materials change. */
+:root[data-theme="light"] dialog {
+  border-color: #9baa85a0;
+  background: var(--surface-strong);
+  color: var(--ink);
+  box-shadow: 0 30px 100px #273d2c33, 0 5px 20px #273d2c14;
+}
+
+:root[data-theme="light"] dialog::backdrop {
+  background: #26382b59;
+}
+
+:root[data-theme="light"] dialog > p:not(.eyebrow),
+:root[data-theme="light"] .dialog-footnote {
+  color: var(--muted);
+}
+
+:root[data-theme="light"] #confirm-reset {
+  border-color: #b37660;
+  color: var(--error);
+}
+
+:root[data-theme="light"] #confirm-reset:hover {
+  border-color: var(--error);
+  background: #f5e8dc;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle.icon-button {
+    transition: none;
+  }
+}

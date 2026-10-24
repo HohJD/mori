@@ -1,4 +1,6 @@
 import './styles.css';
+import './hardware.css';
+import { initTheme } from './theme.js';
 import {
   adopt, advanceFocus, bondLevel, cancelFocus, confirmFocus, createState,
   decodeState, forgetWin, interact, pauseFocus, remainingTime, resumeFocus,
@@ -7,10 +9,13 @@ import {
 import { createPersistence } from './storage.js';
 import { createReactions, mountCreatures } from './creature.js';
 import { mountDevices } from './device.js';
+import { initHardware } from './hardware.js';
 
 const $ = (selector) => document.querySelector(selector);
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-mountDevices(reducedMotion);
+initTheme();
+mountDevices();
+initHardware(reducedMotion);
 mountCreatures();
 const reactions = createReactions(reducedMotion);
 

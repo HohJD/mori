@@ -3,8 +3,9 @@
 [Live site](https://mori-drab.vercel.app) · [GitHub repository (private)](https://github.com/HohJD/mori)
 
 A pocket-companion **design concept** and a working, local-first web playground.
-The site preserves the original sage/lime identity, CSS-layered pebble device,
-and authored pixel creature. It adds a useful, human-confirmed focus ritual.
+The site preserves the original sage/lime identity, interactive CSS hero device,
+and authored pixel creature. A procedural 3D hardware studio opens and reassembles
+the concept on scroll, alongside a useful, human-confirmed focus ritual.
 
 There is **no manufactured hardware, conversational AI, microphone connection,
 account, payment, signup, external API, or cloud database**. Reactions are scripted.
@@ -29,6 +30,9 @@ npm run preview     # Serve that build at http://127.0.0.1:4173
 Stop the dev server before starting preview; both use port 4173.
 Fonts are packaged and self-hosted, with no Google Fonts requests. Their OFL
 copyright notices and license ship in `website/public/font-licenses.txt`.
+The 3D studio uses exactly pinned **Three.js 0.186.1** and **GSAP 3.15.0**
+(including ScrollTrigger). Software notices ship in
+`website/public/software-licenses.txt`; GSAP uses its standard no-charge license.
 No environment variables or secrets are needed.
 
 ## What works
@@ -53,6 +57,49 @@ No environment variables or secrets are needed.
   Reset requires confirmation and clears the entire local world and timer.
 - Native accessible dialogs and FAQ disclosures, keyboard controls, focus
   indicators, and a reduced-motion mode without scroll/idle/reaction animations.
+- Full light/dark palettes, with an accessible sun/moon action in the header.
+  The first visit follows the system; an explicit choice is remembered separately
+  from the companion. Resetting a Mori does **not** reset the theme.
+
+## Inside the little device
+
+The **Hardware studio** (`#inside`) is a design illustration, not manufactured
+hardware, CAD, a production schematic, or a released BOM. Proposed parts are
+grounded in the research document; fit, specifications, safety, and battery life
+are not validated. No microphone, radio, or AI connection is made by this website.
+
+- Native downward scroll moves through **assembled → opening → exploded
+  inspection → closing → assembled**. Scrolling upward reverses the same absolute
+  transforms. A scrubbed GSAP ScrollTrigger timeline controls a native sticky
+  stage (420svh desktop / 380svh mobile); there is no wheel interception or
+  scroll-jacking. Both closed ends have identical model and camera transforms.
+- **Assembled** seeks to the closed end; **Exploded** seeks to the inspection
+  portion. The labelled range also works with arrow, Home, and End keys. Selecting
+  a component opens the model first, then highlights that actual part.
+- All **16** numbered selectors expose a name, function, and proposed material:
+  enclosure, bumper, lens, display/touch/flex, tactile buttons, PCB, compute/radio,
+  motion sensor, microphone, physical mute, speaker/amplifier, haptics, protected
+  battery, USB-C/power system, rear shell/lanyard, and assembly/fasteners.
+  Small screens use the same complete native select and previous/next controls.
+- **Look closer** isolates and enlarges the selected group, including its
+  subcomponents. **See all parts** returns to the exploded view. The nearby
+  playground link always lets you leave the study.
+- The seed-shaped model, cutout enclosure, screen's original MORI pixels, board
+  traces, chips, RF shield, metallic battery, speaker, ribbon cable, contacts,
+  and fasteners are generated locally. Lighting uses a procedural room environment,
+  not remote assets. Shell colors and both themes update the live scene.
+- Three.js, the model, and GSAP load only as the studio approaches the viewport.
+  Rendering is demand-driven, stops offscreen/in a hidden tab, and caps pixel
+  ratio at 1.7. Resize, theme, selection, and shell changes invalidate a frame;
+  there is no endless GPU render loop. Geometry/material/texture resources and
+  ScrollTriggers have explicit cleanup.
+- Reduced motion shows a static exploded study with instant manual controls and
+  no long pinned scroll span. Short windows use the same naturally flowing,
+  manually inspectable layout rather than clipping the controls. Preference
+  changes are supported while the page is open.
+- Unsupported/lost WebGL or a failed lazy import keeps a detailed, local SVG
+  study and the same component inspector available. The companion and timer
+  do not depend on the 3D module loading.
 
 ## Persistence & privacy
 
@@ -61,6 +108,9 @@ shell, interaction counts, bond, active session, and recent wins. Data is local
 to **this browser and this site origin**: localhost, preview deployments, and
 production are separate worlds. Nothing synchronizes between devices.
 Task text is rendered with `textContent` and is never sent over the network.
+`mori-theme` contains only the explicit `light` or `dark` appearance preference.
+It is not part of `mori-world-v1`; blocked storage still permits a temporary
+in-memory theme choice, and an unchosen theme follows live system changes.
 
 Storage is written only on user changes, startup/migration, and timer expiry,
 not on countdown ticks. Invalid records are normalized or discarded with a
@@ -89,8 +139,13 @@ PLAYWRIGHT_CHANNEL=chrome npm run test:browser
 The single browser spec covers adoption, text-injection safety, distinct
 interactions, preview/reload, pause/resume, confirmed real wins, cancellation,
 forget/reset, storage failures, keyboard dialogs, self-hosted assets, and
-320 / 390 / 768 / 1440px layouts. A Playwright-controlled clock tests full
-5-minute sessions without waiting in real time.
+320 / 390 / 768 / 1440px layouts. Hardware checks exercise actual WebGL draws and
+mesh transforms (including identical closed renders and reverse scroll), all
+16 selectors, isolated close-ups, short mobile windows, live reduced-motion
+cleanup, theme/shell sync, AA UI text contrast, system/blocked-storage preferences,
+and import/context-loss/unsupported-WebGL fallbacks. A Playwright-controlled
+clock tests full 5-minute sessions without waiting in real time.
+For resource-constrained machines, append `-- --workers=2` to the browser command.
 
 Optional review screenshots (the directory must already exist):
 
@@ -109,7 +164,15 @@ website/index.html          Semantic page, forms, and native dialogs
 website/src/main.js         DOM/controller and explicit user actions
 website/src/state.js        Pure normalization, focus/reward, and bond model
 website/src/storage.js      Optional local storage and truthful save status
-website/src/device.js       Original layered device and scroll study
+website/src/device.js       Original lightweight interactive hero device
+website/src/hardware.js     Lazy studio controller, GSAP timeline, inspector
+website/src/hardware-model.js  Procedural Three.js parts, lighting, disposal
+website/src/hardware-fallback.js  Detailed local SVG alternative
+website/src/hardware-parts.js  Shared proposed-component descriptions
+website/src/hardware.css    Responsive sticky studio and static alternatives
+website/src/theme.js        System/persisted theme controller
+website/src/theme.css       Full light/dark palettes and component overrides
+website/public/theme-init.js  Blocking pre-paint appearance bootstrap
 website/src/creature.js     Original pixel art and authored reactions
 website/src/styles.css      Responsive design and reduced-motion behavior
 website/public/favicon.svg Local artwork

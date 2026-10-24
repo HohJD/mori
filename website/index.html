@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#080b0a">
+    <meta name="color-scheme" content="dark light">
+    <script src="/theme-init.js"></script>
     <meta name="description" content="A little life of its own. Meet MORI: a pocket companion concept and a playable, private little world for focus, friendship, and small wins.">
     <meta property="og:title" content="MORI — Little device. Big feelings.">
     <meta property="og:description" content="A small companion for your next small win. Explore the concept, meet your Mori, and try a little focus ritual.">
@@ -20,6 +22,7 @@
         <a href="#play">The playground <span aria-hidden="true">↗</span></a>
         <a href="#wins">Small wins</a>
       </nav>
+      <button type="button" class="theme-toggle icon-button" data-theme-toggle></button>
       <button class="button button-outline header-adopt" data-adopt>Adopt your Mori <span aria-hidden="true">↗</span></button>
     </header>
 
@@ -84,23 +87,57 @@
         <p class="life-footnote"><span aria-hidden="true">♡</span> No streaks to protect. No guilt for being away. Your Mori grows at your pace.</p>
       </section>
 
-      <section class="inside section" id="inside" aria-labelledby="inside-title">
-        <div class="inside-grid page-width">
-          <div class="inside-art">
-            <span class="eyebrow inside-art-label">A little anatomy of a daydream</span>
-            <div class="device-mount inside-device" data-device="inside" aria-hidden="true"></div>
-            <div class="assembly-caption"><span class="tiny-cross" aria-hidden="true">+</span> EXPLODED VIEW / DESIGN EXPLORATION</div>
+      <section class="hardware-story" id="inside" aria-labelledby="inside-title" data-renderer="loading" data-motion="scroll">
+        <div class="hardware-studio">
+          <div class="hardware-heading">
+            <div>
+              <p class="eyebrow lime">02 / The anatomy of a little friend</p>
+              <h2 id="inside-title">A little body. A whole <em>world.</em></h2>
+            </div>
+            <p class="hardware-invitation">Soft on the outside. A world within.<br>Scroll to open, explore, and bring it all together.</p>
           </div>
-          <div class="inside-copy">
-            <p class="eyebrow lime">02 / More than a little machine</p>
-            <h2 id="inside-title">A little body.<br>A whole <em>world.</em></h2>
-            <p class="section-intro">A pocket-sized idea with a soft side. A familiar feeling, in an unfamiliar little shape.</p>
-            <ol class="design-notes">
-              <li><span class="eyebrow lime">01</span><div><h3>A shell with character</h3><p>A sage pebble, three little buttons, and a place on your desk. For now, an illustrated concept.</p></div></li>
-              <li><span class="eyebrow lime">02</span><div><h3>A window into their world</h3><p>A tiny room. Big expressions. A new leaf for the small moments you share.</p></div></li>
-              <li><span class="eyebrow lime">03</span><div><h3>A gentle reason to begin</h3><p>One task, a quiet timer, and a win you choose to remember. Try that part right here.</p></div></li>
-            </ol>
-            <a class="text-link" href="#play">Meet the soul of the idea <span aria-hidden="true">↘</span></a>
+          <div class="hardware-topline">
+            <span class="eyebrow">M–01 <span class="hardware-slash">/</span> Hardware studio</span>
+            <span class="hardware-chapter" data-hardware-chapter>01 — A familiar little shape</span>
+            <span class="hardware-render-label" data-render-label>Preparing the study</span>
+          </div>
+          <div class="hardware-workspace">
+            <div class="hardware-viewport" role="group" aria-label="MORI procedural hardware concept. Use the component inspector to explore every proposed part.">
+              <div class="hardware-orbit" aria-hidden="true"></div>
+              <div class="hardware-fallback" aria-hidden="true"></div>
+              <div class="hardware-canvas"></div>
+              <div class="hardware-markers" aria-label="Parts in the model"></div>
+              <div class="hardware-view-caption" aria-hidden="true"><span>FIG. 002</span><span data-view-caption>One small world, held together.</span></div>
+            </div>
+            <aside class="hardware-inspector" aria-labelledby="inspector-title">
+              <div class="inspector-heading"><h3 id="inspector-title">Every little part.</h3><span class="eyebrow">16 / 16</span></div>
+              <p class="inspector-hint">Choose a number. Follow the curiosity.</p>
+              <div class="hardware-part-index" role="group" aria-label="Inspect a component"></div>
+              <div class="hardware-part-nav">
+                <button type="button" data-part-prev aria-label="Previous component">←</button>
+                <label class="hardware-select-label"><span class="visually-hidden">Choose a component</span><select id="hardware-part-select" aria-label="Choose a component"></select></label>
+                <button type="button" data-part-next aria-label="Next component">→</button>
+              </div>
+              <div class="hardware-part-detail" aria-live="polite" aria-atomic="true">
+                <p class="eyebrow lime" data-part-category>01 / The outer world</p>
+                <h4 data-part-title>Front enclosure</h4>
+                <p data-part-description>A soft, seed-shaped home for a little personality.</p>
+                <p class="hardware-material"><span>Proposed</span><strong data-part-material>Textured polymer</strong></p>
+              </div>
+              <button type="button" class="hardware-isolate" data-isolate aria-pressed="false">Look closer <span aria-hidden="true">↗</span></button>
+            </aside>
+          </div>
+          <div class="hardware-transport">
+            <div class="hardware-view-controls" role="group" aria-label="Hardware view">
+              <button type="button" data-hardware-view="assembled" aria-pressed="true">Assembled</button>
+              <button type="button" data-hardware-view="exploded" aria-pressed="false">Exploded <span aria-hidden="true">↗</span></button>
+            </div>
+            <label class="hardware-scrub-label" for="hardware-scrub"><span class="visually-hidden">Hardware story progress: open, inspect, close</span><input id="hardware-scrub" type="range" min="0" max="1000" step="1" value="0" aria-valuetext="Assembled, start of the story"><span class="hardware-scrub-steps" aria-hidden="true"><span>Open</span><span>Explore</span><span>Close</span></span></label>
+            <a class="hardware-skip" href="#play">Meet the little soul <span aria-hidden="true">↘</span></a>
+          </div>
+          <div class="hardware-footnote">
+            <p><strong>Design concept · proposed internals.</strong> Illustrative geometry, not CAD or a released BOM. Fit, specifications, and battery life are unvalidated.</p>
+            <span data-hardware-instruction>Keep scrolling. It all comes back together.</span>
           </div>
         </div>
       </section>
