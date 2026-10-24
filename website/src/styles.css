@@ -198,12 +198,12 @@ h1 em { letter-spacing: -5px; white-space: nowrap; }
 .creature-shadow { position: absolute; bottom: -12px; left: 10%; width: 80%; height: 12px; border-radius: 50%; background: #070d0855; }
 .creature-happy-eyes { display: none; }
 .creature-mouth { transform-box: fill-box; transform-origin: center; }
-body[data-reaction] .creature { animation-play-state: paused; }
-body[data-reaction="feed"] .creature-mouth { transform: scale(.65, 1.8); }
-body[data-reaction="pet"] .creature-eyes, body[data-reaction="win"] .creature-eyes { display: none; }
-body[data-reaction="pet"] .creature-happy-eyes, body[data-reaction="win"] .creature-happy-eyes { display: block; }
-body[data-reaction="pet"] .creature-cheeks { fill: #eece9b; }
-body[data-reaction="play"] .creature-mouth { transform: scale(.7, 1.5); }
+body[data-reaction] .room-pet .creature { animation-play-state: paused; }
+body[data-reaction="feed"] .room-pet .creature-mouth { transform: scale(.65, 1.8); }
+body[data-reaction="pet"] .room-pet .creature-eyes, body[data-reaction="win"] .room-pet .creature-eyes { display: none; }
+body[data-reaction="pet"] .room-pet .creature-happy-eyes, body[data-reaction="win"] .room-pet .creature-happy-eyes { display: block; }
+body[data-reaction="pet"] .room-pet .creature-cheeks { fill: #eece9b; }
+body[data-reaction="play"] .room-pet .creature-mouth { transform: scale(.7, 1.5); }
 body[data-focus="running"] .room-pet .creature { animation-duration: 6s; }
 .room-dust { position: absolute; color: #b9d67a66; font: 15px var(--display); }
 .dust-one { top: 40px; left: 49%; }

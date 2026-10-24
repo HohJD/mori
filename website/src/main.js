@@ -10,6 +10,7 @@ import { createPersistence } from './storage.js';
 import { createReactions, mountCreatures } from './creature.js';
 import { mountDevices } from './device.js';
 import { initHardware } from './hardware.js';
+import { initAssistant } from './assistant.js';
 
 const $ = (selector) => document.querySelector(selector);
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -17,6 +18,7 @@ initTheme();
 mountDevices();
 initHardware(reducedMotion);
 mountCreatures();
+initAssistant();
 const reactions = createReactions(reducedMotion);
 
 const persistence = createPersistence((status, message) => {
@@ -29,7 +31,6 @@ let winsSignature = '';
 let focusFeedback = 'No pressure. Begin when you’re ready.';
 const companionName = () => state.name || 'Mori';
 let petMessage = `${companionName()} says: oh, hi human. got a little time?`;
-let screenMessage = state.name ? `${companionName()} is here.` : 'oh, hi human.';
 
 const lines = {
   feed: [
@@ -51,7 +52,6 @@ const lines = {
     'a very small adventure. a very big yes.',
   ],
 };
-const screenLines = { feed: 'snack acquired!', pet: 'feeling loved ♡', play: 'tiny zoomies!' };
 
 function renderIdentity() {
   document.body.dataset.shell = state.shell;
@@ -61,13 +61,6 @@ function renderIdentity() {
   });
   document.querySelectorAll('[data-shell-label]').forEach((element) => {
     element.textContent = state.shell[0].toUpperCase() + state.shell.slice(1);
-  });
-  document.querySelectorAll('[data-screen-message]').forEach((element) => {
-    element.textContent = screenMessage;
-  });
-  document.querySelectorAll('.device-buttons button').forEach((button) => {
-    const verb = button.dataset.action === 'play' ? 'Play with' : button.dataset.action[0].toUpperCase() + button.dataset.action.slice(1);
-    button.setAttribute('aria-label', `${verb} ${companionName()}`);
   });
   $('.customize-button').setAttribute('aria-label', `Name ${companionName()} and choose a shell`);
   $('#pet-message').textContent = petMessage;
@@ -200,7 +193,6 @@ function tick() {
   const next = advanceFocus(state, Date.now());
   if (next !== state) {
     petMessage = `${companionName()} says: time’s up. how did your little thing go?`;
-    screenMessage = 'one little check-in.';
     commit(next);
   } else if (state.focus) {
     renderClock();
@@ -227,13 +219,12 @@ function showPlayground() {
   $('#habitat-title').focus({ preventScroll: true });
 }
 
-// All three physical buttons use the same interaction model as the playground.
+// Local habitat actions stay independent of AI, voice, and the device screen.
 document.querySelectorAll('[data-action]').forEach((button) => {
   button.addEventListener('click', () => {
     const action = button.dataset.action;
     const line = lines[action][state.interactions[action] % lines[action].length];
     petMessage = `${companionName()} says: ${line}`;
-    screenMessage = screenLines[action];
     commit(interact(state, action));
     reactions.play(action);
   });
@@ -258,7 +249,6 @@ $('#adoption-form').addEventListener('submit', (event) => {
   const shell = $('#adoption-form input[name="shell"]:checked').value;
   const next = adopt(state, nameInput.value, shell);
   petMessage = `${next.name} says: hi, my favorite human. let’s start small.`;
-  screenMessage = `${next.name} is here.`;
   commit(next);
   adoptionDialog.close();
   showPlayground();
@@ -289,7 +279,6 @@ function beginFocus(preview) {
   clearFieldError(taskInput, $('#task-error'));
   reactions.clear();
   petMessage = `${companionName()} says: you do your thing. I’ll be right here.`;
-  screenMessage = preview ? 'a tiny test run.' : 'one thing. together.';
   commit(next);
   $('#pause-focus').focus({ preventScroll: true });
 }
@@ -305,7 +294,6 @@ $('#pause-focus').addEventListener('click', () => {
 $('#cancel-focus').addEventListener('click', () => {
   focusFeedback = 'Session cancelled. No win or minutes saved. There’s always another little beginning.';
   petMessage = `${companionName()} says: a change of plan. still good company.`;
-  screenMessage = 'no rush, human.';
   commit(cancelFocus(state));
   taskInput.focus({ preventScroll: true });
 });
@@ -323,7 +311,6 @@ function finishFocus(completed) {
   petMessage = earnedWin
     ? `${companionName()} says: you did your little thing. that’s a big deal.`
     : `${companionName()} says: one little beginning at a time.`;
-  screenMessage = earnedWin ? 'look at you grow! ✳' : 'here when you’re ready.';
   commit(next);
   if (earnedWin) {
     taskInput.value = '';
@@ -350,7 +337,6 @@ $('#confirm-reset').addEventListener('click', () => {
   reactions.clear();
   state = createState();
   petMessage = 'Mori says: a fresh little world. oh, hi human.';
-  screenMessage = 'oh, hi human.';
   focusFeedback = 'A fresh start. Your old local world and current session have been cleared.';
   $('#focus-form').reset();
   $('#adoption-form').reset();
@@ -369,7 +355,6 @@ window.addEventListener('storage', (event) => {
   if (event.key !== STORAGE_KEY && event.key !== null) return;
   state = advanceFocus(decodeState(event.newValue).state, Date.now());
   petMessage = `${companionName()} says: our little world is up to date.`;
-  screenMessage = `${companionName()} is here.`;
   render();
 });
 

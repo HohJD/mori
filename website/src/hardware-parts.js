@@ -24,7 +24,7 @@ export const hardwareParts = [
   {
     id: 'buttons', name: 'Three tactile buttons', category: 'Small, deliberate actions',
     material: 'Polymer caps · tactile switches',
-    description: 'Three independent caps meet three tactile switches. Physical feedback makes a snack, a pat, or a tiny adventure feel intentional.',
+    description: 'Three independent caps meet three tactile switches. The proposed controls are stop/back, talk, and switch agent: AI within reach, without a busy interface.',
   },
   {
     id: 'pcb', name: 'Main circuit board', category: 'The connected little world',
@@ -44,7 +44,7 @@ export const hardwareParts = [
   {
     id: 'microphone', name: 'Microphone', category: 'Only when invited',
     material: 'PDM MEMS mic · acoustic gasket',
-    description: 'An IM69D128S-class near-field mic is proposed for push-to-talk experiments. This website never accesses a microphone or records audio.',
+    description: 'An IM69D128S-class near-field mic is proposed for push-to-talk. This part is a concept; the separate web console uses your browser microphone only when you choose Talk.',
   },
   {
     id: 'mute', name: 'Physical mic mute', category: 'Privacy you can feel',

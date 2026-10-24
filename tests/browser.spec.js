@@ -2,14 +2,22 @@ import { test, expect } from '@playwright/test';
 
 const STORAGE_KEY = 'mori-world-v1';
 const consoleErrors = new WeakMap();
+const expectedAPIFailures = new WeakMap();
 test.use({ reducedMotion: 'reduce' });
 
 test.beforeEach(async ({ page }) => {
   const errors = [];
   consoleErrors.set(page, errors);
+  expectedAPIFailures.set(page, new Set());
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(message.text());
+    if (message.type() !== 'error') return;
+    // Deliberate HTTP/network error fixtures still emit Chromium resource errors.
+    // Only those exact API paths are exempt, never script errors or other assets.
+    let path;
+    try { path = new URL(message.location().url).pathname; } catch { /* Not a URL. */ }
+    if (message.text().startsWith('Failed to load resource:') && expectedAPIFailures.get(page).has(path)) return;
+    errors.push(message.text());
   });
 });
 
@@ -18,7 +26,7 @@ test.afterEach(async ({ page }) => {
 });
 
 async function adoptCompanion(page, name = 'Miso', shell = 'Sage') {
-  await page.getByRole('button', { name: 'Adopt your Mori', exact: true }).first().click();
+  await page.locator('.customize-button').click();
   await page.getByLabel('Your Mori’s name', { exact: true }).fill(name);
   await page.getByRole('radio', { name: shell, exact: true }).check();
   await page.getByRole('button', { name: 'Say your first hello' }).click();
@@ -103,7 +111,99 @@ async function imageDifference(page, first, second) {
   }, { a: first.toString('base64'), b: second.toString('base64') });
 }
 
-test('adopt, use physical and playground buttons, then preview across reload without a fake win', async ({ page }) => {
+// Frontend API-contract fixtures, not evidence of a live provider connection.
+const mockModels = { openai: 'test-gpt-model', claude: 'test-claude-model', gemini: 'test-gemini-model' };
+const jsonReply = (provider = 'openai', overrides = {}) => ({
+  provider, model: mockModels[provider], reply: 'A real response fixture, not a shipped demo.',
+  usage: { inputTokens: 7, outputTokens: 11, totalTokens: 18 },
+  durationMs: 50, requestId: 'test-request', finishReason: 'stop', partial: false, ...overrides,
+});
+const fulfillJSON = (route, body, status = 200) => route.fulfill({
+  status, contentType: 'application/json', headers: { 'Cache-Control': 'no-store' }, body: JSON.stringify(body),
+});
+
+async function installSpeech(page, { listen = true, speak = true, autoEnd = true } = {}) {
+  await page.addInitScript(({ listen, speak, autoEnd }) => {
+    const state = {
+      starts: 0, aborts: 0, stops: 0, cancels: 0, spoken: [], order: [], current: null, utterance: null,
+      emit(text, final = true) {
+        const result = [{ transcript: text }];
+        result.isFinal = final;
+        this.current?.onresult?.({ results: [result], resultIndex: 0 });
+      },
+      fail(error) { this.current?.onerror?.({ error }); },
+      finishSpeaking() { this.utterance?.onend?.(); },
+    };
+    window.__speech = state;
+    class FakeRecognition {
+      start() {
+        state.starts++; state.order.push('listen'); state.current = this;
+        state.lateResult = this.onresult;
+        this.onstart?.();
+      }
+      stop() { state.stops++; state.order.push('stop-listening'); this.onend?.(); }
+      abort() { state.aborts++; state.order.push('abort-listening'); if (state.current === this) state.current = null; }
+    }
+    Object.defineProperty(window, 'SpeechRecognition', { configurable: true, value: listen ? FakeRecognition : undefined });
+    Object.defineProperty(window, 'webkitSpeechRecognition', { configurable: true, value: undefined });
+    Object.defineProperty(window, 'SpeechSynthesisUtterance', {
+      configurable: true, value: speak ? class { constructor(text) { this.text = text; } } : undefined,
+    });
+    Object.defineProperty(window, 'speechSynthesis', {
+      configurable: true,
+      value: speak ? {
+        speak(utterance) {
+          state.spoken.push(utterance.text); state.order.push('speak'); state.utterance = utterance;
+          state.lateSpeechEnd = utterance.onend;
+          utterance.onstart?.();
+          if (autoEnd) setTimeout(() => utterance.onend?.(), 0);
+        },
+        cancel() { state.cancels++; state.order.push('cancel-speech'); state.utterance = null; },
+      } : undefined,
+    });
+  }, { listen, speak, autoEnd });
+}
+
+async function mockAI(page, { authenticated = true, authConfigured = true, configured = ['openai', 'claude', 'gemini'], limits = {}, speech = {} } = {}) {
+  await installSpeech(page, speech);
+  const mock = {
+    config: {
+      auth: { required: true, configured: authConfigured, authenticated },
+      providers: Object.entries(mockModels).map(([id, model]) => ({ id, name: id, model, configured: configured.includes(id) })),
+      limits: { maxMessages: 20, maxMessageChars: 4000, maxTotalChars: 24000, ...limits },
+    },
+    requests: [], sessions: [], onChat: null, missingConfig: false,
+  };
+  await page.route('**/api/config', (route) => mock.missingConfig
+    ? route.fulfill({ status: 404, contentType: 'text/html', body: '<h1>No API</h1>' })
+    : fulfillJSON(route, mock.config));
+  await page.route('**/api/session', async (route) => {
+    const method = route.request().method();
+    const data = method === 'POST' ? route.request().postDataJSON() : null;
+    mock.sessions.push({ method, data });
+    if (method === 'POST' && data.code !== 'test-access-code') {
+      expectedAPIFailures.get(page).add('/api/session');
+      return fulfillJSON(route, { error: { code: 'AUTH_REQUIRED', message: 'Incorrect test code' } }, 401);
+    }
+    mock.config.auth.authenticated = method === 'POST';
+    return fulfillJSON(route, { authenticated: mock.config.auth.authenticated });
+  });
+  await page.route('**/api/chat', async (route) => {
+    const payload = route.request().postDataJSON();
+    mock.requests.push(payload);
+    if (mock.onChat) return mock.onChat(route, payload);
+    return fulfillJSON(route, jsonReply(payload.provider));
+  });
+  return mock;
+}
+
+async function sendDraft(page, text) {
+  await page.locator('#chat-draft').fill(text);
+  await page.locator('#send-message').click();
+  await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'idle');
+}
+
+test('adopt, use all local habitat buttons, then preview across reload without a fake win', async ({ page }) => {
   await freezeClock(page);
   await page.goto('/');
   await adoptCompanion(page, '  Miso  ', 'Lavender');
@@ -111,7 +211,7 @@ test('adopt, use physical and playground buttons, then preview across reload wit
   await expect(page.locator('#focus-title')).toContainText('Miso');
   await expect(page.locator('body')).toHaveAttribute('data-shell', 'lavender');
 
-  await page.getByRole('button', { name: 'Feed Miso', exact: true }).click();
+  await page.getByRole('button', { name: 'Feed', exact: true }).click();
   await expect(page.locator('#pet-message')).toContainText('crunch crunch');
   await expect(page.locator('body')).toHaveAttribute('data-reaction', 'feed');
   await page.getByRole('button', { name: 'Pet', exact: true }).click();
@@ -221,7 +321,7 @@ test('names and tasks are text, whitespace is rejected, and dialogs and radios w
   await expect(page.locator('.skip-link')).toHaveCSS('opacity', '1');
   await page.keyboard.press('Enter');
   await expect(page.locator('#main')).toBeFocused();
-  const trigger = page.getByRole('button', { name: 'Adopt your Mori', exact: true }).first();
+  const trigger = page.locator('.customize-button');
   await trigger.focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('dialog')).toBeVisible();
@@ -289,11 +389,11 @@ test('legacy names migrate, corrupt data recovers, and unavailable storage is di
 });
 
 for (const width of [320, 390, 768, 1440]) {
-  test(`layout, local assets, and reduced motion at ${width}px`, async ({ page }) => {
+  test(`layout, local assets, and reduced motion at ${width}px`, async ({ page, baseURL }) => {
     await page.setViewportSize({ width, height: width > 1000 ? 1000 : 844 });
     const externalRequests = [];
     page.on('request', (request) => {
-      if (!request.url().startsWith('http://127.0.0.1:4173') && !request.url().startsWith('data:')) externalRequests.push(request.url());
+      if (!request.url().startsWith('data:') && new URL(request.url()).origin !== new URL(baseURL).origin) externalRequests.push(request.url());
     });
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
@@ -334,7 +434,7 @@ for (const width of [320, 390, 768, 1440]) {
     await page.evaluate(() => window.scrollTo(0, 0));
     if (process.env.MORI_SCREENSHOTS && [390, 1440].includes(width)) {
       await page.screenshot({
-        path: `/tmp/mori-review/mori-${width === 1440 ? 'desktop' : 'mobile'}.png`,
+        path: `/tmp/mori-voice-review/mori-${width === 1440 ? 'desktop' : 'mobile'}.png`,
         fullPage: true,
         animations: 'disabled',
       });
@@ -350,7 +450,14 @@ test.describe('first-load navigation', () => {
   // genuine browser navigation begins. Do not use enterHardware() here.
   test('fresh mobile /#inside reaches and renders the studio', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
+    // The setup notice above the anchor arrives asynchronously. It must not
+    // displace the initial hash navigation while the 3D engine also loads.
+    await page.route('**/api/config', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      await route.continue();
+    });
     await page.goto('/#inside');
+    await expect(page.locator('#assistant-readiness')).not.toHaveText('Checking setup');
     await expect(page.locator('#inside')).toHaveAttribute('data-renderer', 'webgl', { timeout: 15_000 });
     await expect(page.locator('#inside')).toHaveAttribute('data-trigger-count', '1');
     await expectAnchorSettled(page, '#inside');
@@ -372,16 +479,30 @@ test.describe('first-load navigation', () => {
     await expect(page.locator('.hardware-canvas canvas')).toHaveAttribute('data-draw-calls', /^[1-9]\d*$/);
   });
 
-  test('first mobile playground link passes the unloaded studio without stopping early', async ({ page }) => {
+  test('first mobile little-world link passes the unloaded studio without stopping early', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
     await expect(page.locator('#inside')).toHaveAttribute('data-renderer', 'loading');
     await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'smooth');
-    await page.getByRole('link', { name: 'Try the playground', exact: true }).click();
+    await page.getByRole('link', { name: 'Visit your little world', exact: true }).click();
     await expect(page.locator('#inside')).toHaveAttribute('data-renderer', 'webgl', { timeout: 15_000 });
     await expect(page.locator('#inside')).toHaveAttribute('data-trigger-count', '1');
     await expectAnchorSettled(page, '#play');
     await expect(page.locator('#play-title')).toBeInViewport();
+  });
+
+  test('resizing the live console keeps the lazy studio’s absolute scroll landmarks correct', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto('/');
+    await enterHardware(page);
+    const before = Number(await page.locator('#inside').getAttribute('data-scroll-start'));
+    await page.locator('#chat-draft').evaluate((element) => { element.style.height = '300px'; });
+    await expect.poll(async () => Number(await page.locator('#inside').getAttribute('data-scroll-start'))).toBeGreaterThan(before + 100);
+    await expect.poll(() => page.locator('#inside').evaluate((element) => Math.abs(Number(element.dataset.scrollStart) - element.offsetTop))).toBeLessThan(2);
+    await enterHardware(page);
+    await scrollHardware(page, .50);
+    await expect(page.locator('#inside')).toHaveAttribute('data-phase', 'exploded');
+    await expect(page.locator('#inside')).toHaveAttribute('data-trigger-count', '1');
   });
 });
 
@@ -394,9 +515,9 @@ test('normal-motion reactions clear; real 3D opens, rests, closes down-scroll, a
   });
   await page.goto('/');
   expect(heavyRequests, 'The initial hero does not import the 3D/scroll engine').toEqual([]);
-  await page.getByRole('button', { name: 'Feed Mori', exact: true }).click();
-  await page.getByRole('button', { name: 'Pet Mori', exact: true }).click();
-  await page.getByRole('button', { name: 'Play with Mori', exact: true }).click();
+  await page.getByRole('button', { name: 'Feed', exact: true }).click();
+  await page.getByRole('button', { name: 'Pet', exact: true }).click();
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
   await expect(page.locator('body')).toHaveAttribute('data-reaction', 'play');
   await expect(page.locator('body')).not.toHaveAttribute('data-reaction', { timeout: 4000 });
   await enterHardware(page);
@@ -600,7 +721,7 @@ test('unsupported WebGL uses detailed local vector parts with the same working i
   await page.locator('[data-part="microphone"]').click();
   await expect(page.locator('[data-fallback-part="microphone"]')).toHaveAttribute('transform', open);
   await expect(page.locator('[data-fallback-part="microphone"]')).toHaveAttribute('data-highlight', 'true');
-  await expect(page.locator('[data-part-description]')).toContainText('never accesses a microphone');
+  await expect(page.locator('[data-part-description]')).toContainText('only when you choose Talk');
   await page.getByRole('button', { name: 'Look closer' }).click();
   await expect(svg).not.toHaveAttribute('viewBox', '0 0 920 620');
   await page.getByRole('button', { name: 'See all parts' }).click();
@@ -635,7 +756,7 @@ test('a failed lazy import leaves an inspectable static study and the companion 
   await expect(page.locator('#inside')).toHaveAttribute('data-phase', 'exploded');
   await page.locator('[data-part="power"]').click();
   await expect(page.locator('[data-part-title]')).toHaveText('USB-C & power');
-  await page.getByRole('button', { name: 'Feed Mori', exact: true }).click();
+  await page.getByRole('button', { name: 'Feed', exact: true }).click();
   await expect(page.locator('#pet-message')).toContainText('crunch crunch');
 });
 
@@ -687,3 +808,504 @@ for (const width of [320, 390, 768]) {
     await expect(page.locator('#habitat-title')).toBeInViewport();
   });
 }
+
+test.describe('AI console · mocked API contracts and browser speech', () => {
+  test('missing keys are truthful; physical Talk/Stop/Switch do not invent a connection or touch companion state', async ({ page }) => {
+    const mock = await mockAI(page, { authenticated: false, authConfigured: false, configured: [] });
+    await page.goto('/');
+    await expect(page.locator('#assistant-readiness')).toHaveText('Needs setup');
+    await expect(page.locator('[data-screen-message]')).toHaveText('Needs setup');
+    await expect(page.locator('#metric-replies')).toHaveText('0');
+    await expect(page.locator('#metric-time')).toHaveText('—');
+    await expect(page.locator('#metric-tokens')).toHaveText('—');
+    await expect(page.locator('.chat-message')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Switch agent', exact: true }).click();
+    await expect(page.locator('[data-screen-agent]')).toHaveText('CLAUDE');
+    await expect(page.locator('[data-provider="claude"]')).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('button', { name: 'Talk to your AI', exact: true }).click();
+    await expect(page.locator('#connections-dialog')).toBeVisible();
+    await expect(page.locator('#connections-summary')).toHaveText('This Mori is waiting for its AI connections.');
+    await expect(page.locator('#connection-list .connection-badge')).toHaveText(['Needs setup', 'Needs setup', 'Needs setup']);
+    await expect(page.locator('#unlock-form')).not.toBeVisible();
+    expect(await page.evaluate(() => window.__speech.starts)).toBe(0);
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('button', { name: 'Talk to your AI', exact: true })).toBeFocused();
+    await page.getByRole('button', { name: 'Stop or go back', exact: true }).click();
+    await expect(page.locator('[data-screen-phase]')).toHaveText('STOPPED');
+    await adoptCompanion(page, 'Pip', 'Cream');
+    await page.getByRole('button', { name: 'Feed', exact: true }).click();
+    await expect(page.locator('#bond-count')).toHaveText('1 bond point');
+    await expect(page.locator('[data-screen-agent]')).toHaveText('CLAUDE');
+    await expect(page.locator('[data-screen-phase]')).toHaveText('STOPPED');
+    await page.locator('#chat-draft').fill('Please do not send this without setup.');
+    await page.locator('#send-message').click();
+    await expect(page.locator('#connections-dialog')).toBeVisible();
+    expect(mock.requests).toEqual([]);
+    expect(mock.sessions).toEqual([]);
+    expect(await page.evaluate(() => window.__speech.starts)).toBe(0);
+  });
+
+  test('a missing or malformed configuration falls back gracefully and can be refreshed without model calls', async ({ page }) => {
+    const mock = await mockAI(page);
+    mock.missingConfig = true;
+    expectedAPIFailures.get(page).add('/api/config');
+    await page.goto('/#talk');
+    await expect(page.locator('#assistant-readiness')).toHaveText('Unavailable');
+    await page.locator('#voice-talk').click();
+    await expect(page.locator('#connections-summary')).toContainText('couldn’t reach');
+    expect(await page.evaluate(() => window.__speech.starts)).toBe(0);
+    mock.missingConfig = false;
+    // Invalid API-shaped data must not turn a truthy string into a connection.
+    mock.config.auth.authenticated = 'yes';
+    await page.locator('#refresh-connections').click();
+    await expect(page.locator('#assistant-readiness')).toHaveText('Unavailable');
+    mock.config.auth.authenticated = true;
+    await page.locator('#refresh-connections').click();
+    await expect(page.locator('#assistant-readiness')).toHaveText('Ready to try');
+    await expect(page.locator('#metric-replies')).toHaveText('0');
+    expect(mock.requests).toEqual([]);
+    expect(await page.evaluate(() => window.__speech.starts)).toBe(0);
+  });
+
+  test('unlock failure, success, expiry, and lock use session endpoints without storing or auto-sending the code', async ({ page }) => {
+    const mock = await mockAI(page, { authenticated: false });
+    await page.goto('/#talk');
+    await expect(page.locator('#assistant-readiness')).toHaveText('Locked');
+    await page.locator('#voice-talk').click();
+    await expect(page.locator('#access-code')).toBeFocused();
+    await page.locator('#access-code').fill('wrong-test-code');
+    await page.locator('#unlock-submit').click();
+    await expect(page.locator('#unlock-status')).toContainText('didn’t unlock');
+    await expect(page.locator('#access-code')).toHaveValue('');
+    await page.locator('#access-code').fill('test-access-code');
+    await page.locator('#unlock-submit').click();
+    await expect(page.locator('#unlock-status')).toContainText('Access unlocked');
+    await expect(page.locator('#assistant-readiness')).toHaveText('Ready to try');
+    await expect(page.locator('#unlock-form')).not.toBeVisible();
+    expect(mock.requests).toEqual([]);
+    expect(await page.evaluate(() => window.__speech.starts)).toBe(0);
+    expect(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).not.toContain('test-access-code');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#voice-talk')).toBeFocused();
+    mock.onChat = (route) => {
+      mock.config.auth.authenticated = false;
+      return fulfillJSON(route, { error: { code: 'AUTH_REQUIRED', message: 'Expired' } }, 401);
+    };
+    expectedAPIFailures.get(page).add('/api/chat');
+    await page.locator('#chat-draft').fill('A draft that should survive expiry.');
+    await page.locator('#send-message').click();
+    await expect(page.locator('#assistant-status')).toContainText('expired or is locked');
+    await expect(page.locator('#assistant-readiness')).toHaveText('Locked');
+    await expect(page.locator('#chat-draft')).toHaveValue('A draft that should survive expiry.');
+    await expect(page.locator('#metric-replies')).toHaveText('0');
+    await page.locator('#assistant-setup').click();
+    await page.locator('#access-code').fill('test-access-code');
+    await page.locator('#unlock-submit').click();
+    await expect(page.locator('#unlock-status')).toContainText('Access unlocked');
+    await page.keyboard.press('Escape');
+    expect(mock.requests).toHaveLength(1);
+    mock.onChat = null;
+    await page.locator('#send-message').click();
+    await expect(page.locator('#metric-replies')).toHaveText('1');
+    await page.locator('.assistant-toolbar [data-connections]').click();
+    await page.locator('#lock-access').click();
+    await expect(page.locator('#unlock-status')).toContainText('AI access is locked');
+    await expect(page.locator('#assistant-readiness')).toHaveText('Locked');
+    expect(mock.sessions.map(({ method }) => method)).toEqual(['POST', 'POST', 'POST', 'DELETE']);
+    await expect(page.locator('#metric-replies')).toHaveText('1');
+    await expect(page.locator('#access-code')).toHaveValue('');
+    expect(await page.evaluate(() => document.body.textContent)).not.toContain('test-access-code');
+  });
+
+  test('all quick actions choose a real mode and editable helper without sending until asked', async ({ page }) => {
+    const mock = await mockAI(page);
+    await page.goto('/#talk');
+    await expect(page.locator('#assistant-readiness')).toHaveText('Ready to try');
+    const modes = ['write', 'summarize', 'plan', 'translate', 'explain', 'chat'];
+    for (const [index, mode] of modes.entries()) {
+      await page.locator(`[data-mode="${mode}"]`).click();
+      await expect(page.locator(`[data-mode="${mode}"]`)).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.locator('#mode-helper')).not.toBeEmpty();
+      await page.locator('#use-example').click();
+      expect((await page.locator('#chat-draft').inputValue()).length).toBeGreaterThan(20);
+      expect(mock.requests).toHaveLength(index);
+      await sendDraft(page, `My own ${mode} request`);
+      expect(mock.requests[index].mode).toBe(mode);
+      expect(mock.requests[index].provider).toBe('openai');
+      expect(mock.requests[index].messages.at(-1)).toEqual({ role: 'user', content: `My own ${mode} request` });
+    }
+    await expect(page.locator('#metric-replies')).toHaveText('6');
+    await expect(page.locator('#metric-model')).toHaveText(mockModels.openai);
+  });
+
+  test('provider histories stay separate; new conversation clears only its chat; reload forgets chats, not the local world', async ({ page }) => {
+    const mock = await mockAI(page);
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.goto('/');
+    await adoptCompanion(page, 'Miso', 'Lavender');
+    await page.getByRole('button', { name: 'Switch to dark mode' }).click();
+    await sendDraft(page, 'OpenAI first question');
+    await page.locator('[data-provider="claude"]').click();
+    await expect(page.locator('.chat-message')).toHaveCount(0);
+    expect(mock.requests).toHaveLength(1);
+    await sendDraft(page, 'Claude first question');
+    expect(mock.requests[1].messages).toEqual([{ role: 'user', content: 'Claude first question' }]);
+    await page.locator('[data-provider="openai"]').click();
+    await expect(page.locator('#chat-transcript')).toContainText('OpenAI first question');
+    await expect(page.locator('#chat-transcript')).not.toContainText('Claude first question');
+    await sendDraft(page, 'OpenAI follow-up');
+    expect(mock.requests[2].messages.map(({ content }) => content)).toEqual([
+      'OpenAI first question', jsonReply().reply, 'OpenAI follow-up',
+    ]);
+    await page.locator('[data-provider="claude"]').click();
+    await page.locator('#new-conversation').click();
+    await expect(page.locator('.chat-message')).toHaveCount(0);
+    await expect(page.locator('#chat-draft')).toBeFocused();
+    await expect(page.locator('#metric-replies')).toHaveText('3');
+    await expect(page.locator('#habitat-title')).toHaveText('Miso’s little corner');
+    await expect(page.locator('body')).toHaveAttribute('data-shell', 'lavender');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await page.locator('[data-provider="openai"]').click();
+    await expect(page.locator('.chat-message')).toHaveCount(4);
+    const storage = await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }));
+    expect(storage).not.toContain('OpenAI first question');
+    expect(storage).not.toContain('Claude first question');
+    await page.reload();
+    await expect(page.locator('.chat-message')).toHaveCount(0);
+    await expect(page.locator('#metric-replies')).toHaveText('0');
+    await expect(page.locator('#habitat-title')).toHaveText('Miso’s little corner');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  });
+
+  test('user and provider HTML remain plain text; time and usage reflect only received replies, including missing and partial usage', async ({ page }) => {
+    const mock = await mockAI(page);
+    const userText = '<img src=x onerror=alert(1)>\nA second line.';
+    const replyText = '<script>window.bad = true</script>\n**Still plain text.**';
+    mock.onChat = async (route, payload) => {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      return fulfillJSON(route, jsonReply(payload.provider, {
+        reply: replyText, usage: { inputTokens: 2, outputTokens: 4, totalTokens: 6 }, durationMs: 999999,
+      }));
+    };
+    await page.goto('/#talk');
+    await sendDraft(page, userText);
+    await expect(page.locator('.chat-message.user p')).toHaveText(userText);
+    await expect(page.locator('.chat-message.assistant p')).toHaveText(replyText);
+    await expect(page.locator('.chat-message.assistant p')).toHaveCSS('white-space', 'pre-wrap');
+    await expect(page.locator('#chat-transcript img, #chat-transcript script, #chat-transcript strong')).toHaveCount(0);
+    expect(await page.evaluate(() => window.bad)).toBeUndefined();
+    await expect(page.locator('#metric-replies')).toHaveText('1');
+    await expect(page.locator('#metric-tokens')).toHaveText('6');
+    const time = await page.locator('#metric-time').textContent();
+    expect(time).toMatch(/^\d+(\.\d)? (ms|s)$/);
+    const ms = parseFloat(time) * (time.endsWith(' ms') ? 1 : 1000);
+    expect(ms).toBeGreaterThanOrEqual(140);
+    expect(ms).toBeLessThan(30_000); // Real measured round trip, not fake server duration.
+    await expect(page.locator('#assistant-readiness')).toHaveText('Replied this visit');
+    mock.onChat = (route, payload) => fulfillJSON(route, jsonReply(payload.provider, {
+      reply: 'Usage was not reported.', usage: { inputTokens: null, outputTokens: null, totalTokens: null },
+    }));
+    await sendDraft(page, 'A follow-up');
+    await expect(page.locator('#metric-tokens')).toHaveText('6+');
+    await expect(page.locator('#metric-token-note')).toContainText('Incomplete reporting');
+    await expect(page.locator('#metric-replies')).toHaveText('2');
+    mock.onChat = (route, payload) => fulfillJSON(route, jsonReply(payload.provider, {
+      reply: 'This is only part of an answer…', usage: { inputTokens: 3, outputTokens: null, totalTokens: null }, partial: true,
+    }));
+    await sendDraft(page, 'One more');
+    await expect(page.locator('#metric-replies')).toHaveText('2');
+    await expect(page.locator('#metric-reply-note')).toHaveText('1 partial reply not counted');
+    await expect(page.locator('#metric-tokens')).toHaveText('9+');
+    await expect(page.locator('.chat-message.assistant').last()).toContainText('Partial reply');
+    await expect(page.locator('#metric-token-note')).toHaveText('Incomplete reporting · 2 replies');
+    expect(mock.requests).toHaveLength(3);
+  });
+
+  test('Stop, provider switch, and new chat abort once and reject late responses even if a transport ignores abort', async ({ page }) => {
+    await mockAI(page);
+    await page.addInitScript(() => {
+      const original = window.fetch.bind(window);
+      window.__pendingChats = [];
+      window.fetch = (url, options) => {
+        if (url !== '/api/chat') return original(url, options);
+        return new Promise((resolve) => window.__pendingChats.push({
+          resolve, signal: options.signal, payload: JSON.parse(options.body),
+        }));
+      };
+      window.__finishChat = (index) => {
+        const job = window.__pendingChats[index];
+        job.resolve(new Response(JSON.stringify({
+          provider: job.payload.provider, model: 'stale-model', reply: 'A stale answer must never appear.',
+          usage: { totalTokens: 999 }, durationMs: 100, partial: false,
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+      };
+    });
+    await page.goto('/#talk');
+    await expect(page.locator('#assistant-readiness')).toHaveText('Ready to try');
+    await page.locator('#chat-draft').fill('First pending request');
+    await page.locator('#send-message').click();
+    await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'thinking');
+    await expect(page.locator('#send-message')).toBeDisabled();
+    await page.locator('#chat-form').evaluate((form) => form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+    expect(await page.evaluate(() => window.__pendingChats.length)).toBe(1);
+    await page.locator('#assistant-stop').click();
+    expect(await page.evaluate(() => window.__pendingChats[0].signal.aborted)).toBe(true);
+    await expect(page.locator('#chat-draft')).toHaveValue('First pending request');
+    await page.evaluate(() => window.__finishChat(0));
+    await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'stopped');
+    await expect(page.locator('.chat-message.assistant')).toHaveCount(0);
+    await page.locator('#send-message').click();
+    await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'thinking');
+    await page.locator('[data-provider="claude"]').click();
+    expect(await page.evaluate(() => window.__pendingChats[1].signal.aborted)).toBe(true);
+    await page.evaluate(() => window.__finishChat(1));
+    await expect(page.locator('#chat-draft')).toHaveValue('');
+    await expect(page.locator('.chat-message')).toHaveCount(0);
+    await page.locator('[data-provider="openai"]').click();
+    await expect(page.locator('#chat-draft')).toHaveValue('First pending request');
+    await page.locator('#send-message').click();
+    await page.locator('#new-conversation').click();
+    expect(await page.evaluate(() => window.__pendingChats[2].signal.aborted)).toBe(true);
+    await page.evaluate(() => window.__finishChat(2));
+    await expect(page.locator('#chat-draft')).toHaveValue('');
+    await expect(page.locator('.chat-message')).toHaveCount(0);
+    await expect(page.locator('#metric-replies')).toHaveText('0');
+    await expect(page.locator('#metric-time')).toHaveText('—');
+    await expect(page.locator('#metric-tokens')).toHaveText('—');
+    await expect(page.locator('#metric-model')).toHaveText(mockModels.openai);
+  });
+
+  test('API and network errors keep the draft and metrics honest; retries never choose another provider', async ({ page, context }) => {
+    const mock = await mockAI(page);
+    expectedAPIFailures.get(page).add('/api/chat');
+    mock.onChat = (route) => fulfillJSON(route, { error: { code: 'UPSTREAM_ERROR', message: 'Fixture failure' } }, 502);
+    await page.goto('/#talk');
+    await page.locator('[data-provider="gemini"]').click();
+    await page.locator('#chat-draft').fill('Please explain this.');
+    await page.locator('#send-message').click();
+    await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'error');
+    await expect(page.locator('#assistant-status')).toContainText('couldn’t complete a reply');
+    await expect(page.locator('#chat-draft')).toHaveValue('Please explain this.');
+    await expect(page.locator('#metric-replies')).toHaveText('0');
+    await expect(page.locator('#metric-tokens')).toHaveText('—');
+    mock.onChat = (route, payload) => fulfillJSON(route, jsonReply(payload.provider, { usage: null }));
+    await page.locator('#assistant-retry').click();
+    await expect(page.locator('#metric-replies')).toHaveText('1');
+    await expect(page.locator('#metric-tokens')).toHaveText('Unknown');
+    await expect(page.locator('#metric-token-note')).toContainText('Incomplete reporting');
+    expect(mock.requests.map(({ provider }) => provider)).toEqual(['gemini', 'gemini']);
+    expect(mock.requests[0]).toEqual(mock.requests[1]);
+    mock.onChat = (route) => route.abort('internetdisconnected');
+    await page.locator('#chat-draft').fill('Keep this if the connection drops.');
+    await page.locator('#send-message').click();
+    await expect(page.locator('#assistant-status')).toContainText('connection dropped');
+    await context.setOffline(true);
+    await expect(page.locator('#assistant-readiness')).toHaveText('Offline');
+    await page.locator('#voice-talk').click();
+    expect(await page.evaluate(() => window.__speech.starts)).toBe(0);
+    expect(mock.requests).toHaveLength(3);
+    await page.keyboard.press('Escape');
+    mock.onChat = null;
+    await context.setOffline(false);
+    await expect(page.locator('#assistant-status')).toContainText('online again');
+    expect(mock.requests).toHaveLength(3);
+    await page.locator('#send-message').click();
+    await expect(page.locator('#metric-replies')).toHaveText('2');
+    expect(mock.requests.at(-1).provider).toBe('gemini');
+  });
+
+  test('config limits are enforced before sending, without truncating or sharing conversation history', async ({ page }) => {
+    const mock = await mockAI(page, { limits: { maxMessageChars: 80, maxMessages: 3, maxTotalChars: 500 } });
+    mock.onChat = (route, payload) => fulfillJSON(route, jsonReply(payload.provider, { reply: 'A short answer.' }));
+    await page.goto('/#talk');
+    await expect(page.locator('#chat-draft')).toHaveAttribute('maxlength', '80');
+    await page.locator('#chat-draft').evaluate((element) => {
+      element.value = 'x'.repeat(81);
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.locator('#send-message').click();
+    await expect(page.locator('#assistant-status')).toContainText('within 80 characters');
+    expect(mock.requests).toHaveLength(0);
+    await sendDraft(page, 'First question');
+    await sendDraft(page, 'Second question');
+    await page.locator('#chat-draft').fill('Third question');
+    await page.locator('#send-message').click();
+    await expect(page.locator('#assistant-status')).toContainText('message limit');
+    expect(mock.requests).toHaveLength(2);
+    await page.locator('#new-conversation').click();
+    await sendDraft(page, 'A fresh question');
+    expect(mock.requests[2].messages).toEqual([{ role: 'user', content: 'A fresh question' }]);
+    mock.config.limits.maxMessages = 20;
+    mock.config.limits.maxTotalChars = 25;
+    await page.reload();
+    await sendDraft(page, 'Hello');
+    await page.locator('#chat-draft').fill('Another question');
+    await page.locator('#send-message').click();
+    await expect(page.locator('#assistant-status')).toContainText('too long');
+    expect(mock.requests).toHaveLength(4);
+  });
+
+  test('voice starts only by gesture, sends one final turn to the chosen AI/mode, speaks with mic off, and stops cleanly', async ({ page }) => {
+    const mock = await mockAI(page, { speech: { autoEnd: false } });
+    await page.goto('/#talk');
+    await expect(page.locator('#assistant-readiness')).toHaveText('Ready to try');
+    expect(await page.evaluate(() => window.__speech.starts)).toBe(0);
+    await page.locator('[data-provider="claude"]').click();
+    await page.locator('[data-mode="translate"]').click();
+    await page.locator('#voice-talk').click();
+    await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'listening');
+    await expect(page.locator('[data-screen-agent]')).toHaveText('CLAUDE');
+    await expect(page.locator('[data-screen-phase]')).toHaveText('LISTENING');
+    await page.evaluate(() => window.__speech.emit('Translate hello', false));
+    await expect(page.locator('#chat-draft')).toHaveValue('Translate hello');
+    expect(mock.requests).toHaveLength(0);
+    await page.evaluate(() => window.__speech.emit('Translate hello into French.', true));
+    await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'speaking');
+    expect(mock.requests).toEqual([{
+      provider: 'claude', mode: 'translate', messages: [{ role: 'user', content: 'Translate hello into French.' }],
+    }]);
+    const speech = await page.evaluate(() => ({
+      starts: window.__speech.starts, spoken: window.__speech.spoken, order: window.__speech.order, active: !!window.__speech.current,
+    }));
+    expect(speech.starts).toBe(1);
+    expect(speech.spoken).toEqual([jsonReply().reply]);
+    expect(speech.active).toBe(false);
+    expect(speech.order.indexOf('abort-listening')).toBeLessThan(speech.order.indexOf('speak'));
+    await page.evaluate(() => window.__speech.finishSpeaking());
+    await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'idle');
+    expect(await page.evaluate(() => window.__speech.starts)).toBe(1);
+    // Another explicit turn, followed by Stop during playback.
+    await page.locator('#voice-talk').click();
+    await page.evaluate(() => window.__speech.emit('And thank you?', true));
+    await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'speaking');
+    await page.locator('#assistant-stop').click();
+    await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'stopped');
+    await page.evaluate(() => window.__speech.lateSpeechEnd?.());
+    await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'stopped');
+    expect(await page.evaluate(() => window.__speech.utterance)).toBeNull();
+    await page.locator('#voice-talk').click();
+    await page.evaluate(() => window.__speech.emit('An unfinished draft', false));
+    await page.locator('[data-provider="gemini"]').click();
+    await page.evaluate(() => {
+      const result = [{ transcript: 'A stale final transcript' }]; result.isFinal = true;
+      window.__speech.lateResult?.({ results: [result] });
+    });
+    await expect(page.locator('#chat-draft')).toHaveValue('');
+    expect(mock.requests).toHaveLength(2);
+    await page.locator('#speak-replies').uncheck();
+    await page.locator('#voice-talk').click();
+    await page.evaluate(() => window.__speech.emit('A quiet question', true));
+    await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'idle');
+    expect(mock.requests.at(-1).provider).toBe('gemini');
+    expect(await page.evaluate(() => window.__speech.spoken.length)).toBe(2);
+  });
+
+  test('unsupported speech falls back to typing without touching native microphone or speech services', async ({ page }) => {
+    const mock = await mockAI(page, { speech: { listen: false, speak: false } });
+    await page.goto('/#talk');
+    await expect(page.locator('#voice-talk')).toBeDisabled();
+    await expect(page.locator('#voice-help')).toContainText('isn’t supported');
+    await expect(page.locator('#speak-replies')).toBeDisabled();
+    await expect(page.locator('#speak-replies')).not.toBeChecked();
+    await sendDraft(page, 'Typing still works.');
+    expect(mock.requests).toHaveLength(1);
+    expect(await page.evaluate(() => window.__speech.starts)).toBe(0);
+    await page.getByRole('button', { name: 'Talk to your AI', exact: true }).click();
+    await expect(page.locator('#chat-draft')).toBeFocused();
+  });
+
+  test('permission, no-speech and speech-network errors are recoverable; pagehide cancels listening', async ({ page }) => {
+    const mock = await mockAI(page);
+    await page.goto('/#talk');
+    await expect(page.locator('#assistant-readiness')).toHaveText('Ready to try');
+    for (const [code, text] of [['not-allowed', 'permission was denied'], ['no-speech', 'No words were heard'], ['network', 'speech service could not connect']]) {
+      await page.locator('#voice-talk').click();
+      await page.evaluate((error) => window.__speech.fail(error), code);
+      await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'error');
+      await expect(page.locator('#assistant-status')).toContainText(text);
+    }
+    expect(mock.requests).toHaveLength(0);
+    await sendDraft(page, 'A typed fallback after permission was denied.');
+    await page.locator('#voice-talk').click();
+    await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
+    expect(await page.evaluate(() => window.__speech.current)).toBeNull();
+    await page.evaluate(() => {
+      const result = [{ transcript: 'Do not send on a hidden page' }]; result.isFinal = true;
+      window.__speech.lateResult?.({ results: [result] });
+    });
+    expect(mock.requests).toHaveLength(1);
+  });
+
+  test('a 30-second client timeout keeps the draft and no metrics; keyboard retry sends one multiline message', async ({ page }) => {
+    const mock = await mockAI(page);
+    await freezeClock(page);
+    await page.addInitScript(() => {
+      const original = window.fetch.bind(window);
+      window.__hangChat = true;
+      window.fetch = (url, options) => {
+        if (url !== '/api/chat' || !window.__hangChat) return original(url, options);
+        window.__timeoutSignal = options.signal;
+        return new Promise((resolve, reject) => {
+          options.signal.addEventListener('abort', () => reject(new DOMException('Cancelled', 'AbortError')));
+        });
+      };
+    });
+    await page.goto('/#talk');
+    await expect(page.locator('#assistant-readiness')).toHaveText('Ready to try');
+    await page.locator('#speak-replies').uncheck();
+    await page.locator('#chat-draft').fill('First line');
+    await page.locator('#chat-draft').press('Shift+Enter');
+    await page.locator('#chat-draft').pressSequentially('Second line');
+    await expect(page.locator('#chat-draft')).toHaveValue('First line\nSecond line');
+    expect(mock.requests).toHaveLength(0);
+    await page.locator('#chat-draft').press('Enter');
+    await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'thinking');
+    await page.clock.fastForward(30_001);
+    await expect(page.locator('#assistant-status')).toContainText('too long');
+    expect(await page.evaluate(() => window.__timeoutSignal.aborted)).toBe(true);
+    await expect(page.locator('#chat-draft')).toHaveValue('First line\nSecond line');
+    await expect(page.locator('#metric-replies')).toHaveText('0');
+    await expect(page.locator('#metric-time')).toHaveText('—');
+    await expect(page.locator('#metric-tokens')).toHaveText('—');
+    await page.evaluate(() => { window.__hangChat = false; });
+    await page.locator('#assistant-retry').click();
+    await expect(page.locator('#metric-replies')).toHaveText('1');
+    expect(mock.requests).toHaveLength(1);
+    expect(mock.requests[0].messages).toEqual([{ role: 'user', content: 'First line\nSecond line' }]);
+  });
+
+  test('console and connection controls retain readable theme contrast and fit small screens', async ({ page }) => {
+    await mockAI(page, { authenticated: false });
+    await page.goto('/#talk');
+    for (const width of [320, 390, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const theme of ['light', 'dark']) {
+        await page.emulateMedia({ colorScheme: theme });
+        await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+        await page.locator('.assistant-toolbar [data-connections]').click();
+        await expect(page.locator('#unlock-form')).toBeVisible();
+        expect(await page.locator('#connections-dialog').evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+        await page.keyboard.press('Escape');
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+        const contrasts = await page.evaluate(() => {
+          const luminance = (color) => {
+            const rgb = color.match(/[\d.]+/g).slice(0, 3).map(Number).map((v) => {
+              const s = v / 255; return s <= .04045 ? s / 12.92 : ((s + .055) / 1.055) ** 2.4;
+            });
+            return rgb[0] * .2126 + rgb[1] * .7152 + rgb[2] * .0722;
+          };
+          return ['#assistant-status', '#voice-help', '#draft-count', '#mode-helper', '#chat-draft', '.quick-actions button[aria-pressed="true"]'].map((selector) => {
+            const element = document.querySelector(selector), style = getComputedStyle(element);
+            let background = style.backgroundColor, ancestor = element;
+            while (background === 'rgba(0, 0, 0, 0)' && ancestor.parentElement) {
+              ancestor = ancestor.parentElement; background = getComputedStyle(ancestor).backgroundColor;
+            }
+            const foreground = luminance(style.color), surface = luminance(background);
+            return { selector, ratio: (Math.max(foreground, surface) + .05) / (Math.min(foreground, surface) + .05) };
+          });
+        });
+        contrasts.forEach(({ selector, ratio }) => expect(ratio, `${theme} at ${width}px: ${selector}`).toBeGreaterThanOrEqual(4.5));
+      }
+    }
+  });
+});

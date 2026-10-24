@@ -232,7 +232,7 @@ export function createHardwareScene(mount, { onContextLost }) {
     for (let x = 0; x < 512; x += 20) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 384); ctx.stroke(); }
     for (let y = 0; y < 384; y += 20) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(512, y); ctx.stroke(); }
     ctx.fillStyle = '#b9d69c'; ctx.font = '16px "Space Grotesk", monospace';
-    ctx.fillText('♥ ♥ ♥', 45, 47); ctx.fillText('A LITTLE LIFE', 320, 47);
+    ctx.fillText('MORI / M–01', 45, 47); ctx.fillText('CONCEPT', 360, 47);
     ctx.save(); ctx.translate(165, 100); ctx.scale(2.05, 2.05);
     const paths = [
       ['#d4f995', 'M24 13h9V5h9v10h15V7h9v15h9v9h7v27h-8v9H61v9H49V65H34v11H21V65H10V54H3V35h9V23h12z'],
@@ -244,7 +244,7 @@ export function createHardwareScene(mount, { onContextLost }) {
     for (const [fill, path] of paths) { ctx.fillStyle = fill; ctx.fill(new Path2D(path)); }
     ctx.restore();
     ctx.fillStyle = '#c8e6a2'; ctx.textAlign = 'center'; ctx.font = '19px "Space Grotesk", monospace';
-    ctx.fillText('oh, hi human.', 256, 321);
+    ctx.fillText('your AI, on tap.', 256, 321);
     ctx.fillStyle = '#06140a18'; for (let y = 0; y < 384; y += 4) ctx.fillRect(0, y, 512, 1);
   });
   const screenMaterial = ownMaterial(new THREE.MeshBasicMaterial({ map: screenTexture, toneMapped: false }));
@@ -264,7 +264,7 @@ export function createHardwareScene(mount, { onContextLost }) {
     mesh(buttons, cylinder(.17, .04), palette.rubber, [x, y, -.12], [Math.PI / 2, 0, 0]);
     mesh(buttons, box(.30, .30, .075), palette.steel, [x, y, -.22]);
     mesh(buttons, cylinder(.068, .04, 16), palette.black, [x, y, -.16], [Math.PI / 2, 0, 0]);
-    label(buttons, ['✧', '♡', '↗'][i], .22, .19, [x, y, .119], { color: '#e3edce', size: 78 });
+    label(buttons, ['■', 'TALK', '⇄'][i], i === 1 ? .29 : .22, .19, [x, y, .119], { color: '#e3edce', size: i === 1 ? 44 : 78 });
   });
 
   // 06 — Copper routing, vias, test pads, passives, connectors, and board silkscreen.

@@ -53,7 +53,7 @@ export function createReactions(reducedMotion) {
     animations.forEach((animation) => animation.cancel());
     animations = [];
     document.body.removeAttribute('data-reaction');
-    document.querySelectorAll('.creature').forEach((creature) => {
+    document.querySelectorAll('.room-pet .creature').forEach((creature) => {
       creature.setAttribute('aria-label', 'A curious little lime pixel creature');
       creature.querySelector('.creature-effect').textContent = '';
     });
@@ -66,7 +66,7 @@ export function createReactions(reducedMotion) {
       const reaction = reactions[action];
       if (!reaction) return;
       document.body.dataset.reaction = action;
-      document.querySelectorAll('.creature').forEach((creature) => {
+      document.querySelectorAll('.room-pet .creature').forEach((creature) => {
         creature.setAttribute('aria-label', reaction.description);
         creature.querySelector('.creature-effect').textContent = reaction.effect;
         if (!reducedMotion.matches) {

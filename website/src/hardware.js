@@ -298,6 +298,11 @@ export function initHardware(reducedMotion) {
   shellObserver.observe(document.body, { attributes: true, attributeFilter: ['data-shell'] });
   const resizeObserver = new ResizeObserver(() => { resize = true; schedule(); });
   resizeObserver.observe(viewport);
+  // The live console above the studio can grow (notices, textarea resizing).
+  // Keep absolute scroll landmarks current without interrupting native anchors.
+  const consoleObserver = new ResizeObserver(() => { if (trigger) ScrollTrigger.refresh(true); });
+  const consoleSection = document.querySelector('#talk');
+  if (consoleSection) consoleObserver.observe(consoleSection);
   const visibilityObserver = new IntersectionObserver(([entry]) => {
     visible = entry.isIntersecting;
     if (visible) schedule();
@@ -317,7 +322,7 @@ export function initHardware(reducedMotion) {
     destroyed = true;
     abort.abort();
     if (frame !== null) cancelAnimationFrame(frame);
-    loadObserver.disconnect(); visibilityObserver.disconnect(); resizeObserver.disconnect(); shellObserver.disconnect();
+    loadObserver.disconnect(); visibilityObserver.disconnect(); resizeObserver.disconnect(); shellObserver.disconnect(); consoleObserver.disconnect();
     trigger?.kill(); timeline?.kill(); model?.dispose();
   }
   listen(window, 'pagehide', (event) => { if (!event.persisted) dispose(); });
