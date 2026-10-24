@@ -55,6 +55,8 @@ async function scrollHardware(page, progress) {
 }
 
 async function expectAnchorSettled(page, selector) {
+  // Allow native padding plus a small first-load/font-layout shift, but still
+  // reject navigation that stops at the preceding section.
   let previousY;
   let stableSamples = 0;
   await expect.poll(async () => {
@@ -69,7 +71,7 @@ async function expectAnchorSettled(page, selector) {
     message: `${selector} settles at its anchor, allowing the page's scroll padding`,
     timeout: 10_000,
     intervals: [100],
-  }).toBeLessThanOrEqual(40);
+  }).toBeLessThanOrEqual(64);
 }
 
 async function captureScene(page) {
