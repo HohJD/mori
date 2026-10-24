@@ -48,11 +48,13 @@ function roundedPath(width, height, radius, x = 0, y = 0, hole = false) {
 
 function pebble(scale = 1, hole = false) {
   const path = hole ? new THREE.Path() : new THREE.Shape();
-  path.moveTo(0, 1.98 * scale);
-  path.bezierCurveTo(-1.12 * scale, 1.98 * scale, -1.57 * scale, 1.27 * scale, -1.57 * scale, .26 * scale);
-  path.bezierCurveTo(-1.57 * scale, -.95 * scale, -.94 * scale, -1.98 * scale, 0, -2.02 * scale);
-  path.bezierCurveTo(.94 * scale, -1.98 * scale, 1.57 * scale, -.95 * scale, 1.57 * scale, .26 * scale);
-  path.bezierCurveTo(1.57 * scale, 1.27 * scale, 1.12 * scale, 1.98 * scale, 0, 1.98 * scale);
+  // A slightly asymmetric seed: narrower shoulders up top, a fuller base, and a
+  // whisper of a lean so the silhouette feels organic rather than lathed.
+  path.moveTo(.05 * scale, 2.00 * scale);
+  path.bezierCurveTo(-1.06 * scale, 2.01 * scale, -1.59 * scale, 1.30 * scale, -1.56 * scale, .28 * scale);
+  path.bezierCurveTo(-1.53 * scale, -.94 * scale, -.97 * scale, -2.03 * scale, .03 * scale, -2.06 * scale);
+  path.bezierCurveTo(.99 * scale, -2.03 * scale, 1.59 * scale, -.90 * scale, 1.58 * scale, .32 * scale);
+  path.bezierCurveTo(1.57 * scale, 1.28 * scale, 1.14 * scale, 1.97 * scale, .05 * scale, 2.00 * scale);
   return path;
 }
 
@@ -73,7 +75,8 @@ export function createHardwareScene(mount, { onContextLost }) {
 
   const scene = new THREE.Scene();
   const root = new THREE.Group();
-  root.rotation.set(-.035, 0, -.08);
+  // A few degrees more three-quarter so the bevel and depth read immediately.
+  root.rotation.set(-.05, -.14, -.07);
   scene.add(root);
   const camera = new THREE.OrthographicCamera(-5, 5, 5, -5, .1, 100);
   const viewDirection = new THREE.Vector3(5.0, 3.3, 11).normalize();
@@ -92,7 +95,15 @@ export function createHardwareScene(mount, { onContextLost }) {
     color, roughness: .5, metalness: .08, ...options,
   }));
   const palette = {
-    shell: ownMaterial(new THREE.MeshPhysicalMaterial({ color: '#a9b991', roughness: .36, metalness: .03, clearcoat: .32, clearcoatRoughness: .5 })),
+    // Soft-touch polymer: matte base, faint clearcoat, and a fabric-like sheen.
+    shell: ownMaterial(new THREE.MeshPhysicalMaterial({
+      color: '#b5c39d', roughness: .60, metalness: .02, clearcoat: .25,
+      clearcoatRoughness: .6, sheen: .45, sheenRoughness: .7, sheenColor: '#ffffff',
+    })),
+    shellBack: ownMaterial(new THREE.MeshPhysicalMaterial({
+      color: '#93a478', roughness: .66, metalness: .02, clearcoat: .2,
+      clearcoatRoughness: .7, sheen: .35, sheenRoughness: .75, sheenColor: '#ffffff',
+    })),
     rim: standard('#647454', { roughness: .72 }),
     inner: standard('#7f9070', { roughness: .65 }),
     button: standard('#3c5131', { roughness: .58 }),
@@ -143,9 +154,9 @@ export function createHardwareScene(mount, { onContextLost }) {
   const cylinder = (radius, depth, segments = 32) => cached(`cyl:${radius}:${depth}:${segments}`, () => new THREE.CylinderGeometry(radius, radius, depth, segments));
   const torus = (radius, tube) => cached(`torus:${radius}:${tube}`, () => new THREE.TorusGeometry(radius, tube, 8, 48));
   const plane = (w, h) => cached(`plane:${w}:${h}`, () => new THREE.PlaneGeometry(w, h));
-  function extrude(shape, depth, bevel = .025) {
+  function extrude(shape, depth, bevel = .025, bevelSegments = 3) {
     const geometry = new THREE.ExtrudeGeometry(shape, {
-      depth, bevelEnabled: bevel > 0, bevelSegments: 3, steps: 1,
+      depth, bevelEnabled: bevel > 0, bevelSegments, steps: 1,
       bevelSize: bevel, bevelThickness: bevel, curveSegments: 32,
     });
     geometry.translate(0, 0, -depth / 2);
@@ -202,18 +213,20 @@ export function createHardwareScene(mount, { onContextLost }) {
     face.holes.push(hole);
   });
   face.holes.push(roundedPath(.42, .08, .035, 0, 1.64, true));
-  mesh(front, extrude(face, .14, .055), palette.shell);
+  // Deep, continuous bevel: the face domes into the bumper instead of stacking.
+  mesh(front, extrude(face, .16, .12, 6), palette.shell);
   const bezel = roundedPath(2.43, 1.96, .45, 0, .34);
   bezel.holes.push(roundedPath(2.30, 1.83, .40, 0, .34, true));
-  mesh(front, extrude(bezel, .045, .015), palette.rim, [0, 0, .073]);
-  label(front, 'm o r i', .58, .16, [0, 1.40, .132], { size: 52 });
-  label(front, 'M – 0 1  /  A  L I T T L E  L I F E', 1.16, .12, [0, -1.70, .135], { size: 24 });
+  mesh(front, extrude(bezel, .045, .02), palette.rim, [0, 0, .185]);
+  label(front, 'm o r i', .58, .16, [0, 1.40, .202], { size: 52 });
+  label(front, 'M – 0 1  /  A  L I T T L E  L I F E', 1.16, .12, [0, -1.70, .203], { size: 24 });
 
   // 02 — An independent open ring, not an opaque slab over the electronics.
   const bumper = groups.get('bumper');
   const ring = pebble(1.015);
   ring.holes.push(pebble(.93, true));
-  mesh(bumper, extrude(ring, .69, .04), palette.rim);
+  // Fuller round-over so the waist rolls straight into the shell domes.
+  mesh(bumper, extrude(ring, .58, .12, 5), palette.rim);
   const seam = pebble(1.023);
   seam.holes.push(pebble(1.012, true));
   mesh(bumper, extrude(seam, .015, .003), palette.inner, [0, 0, -.16]);
@@ -221,7 +234,9 @@ export function createHardwareScene(mount, { onContextLost }) {
   // 03 — Thin, translucent cover with a subtle edge reflection.
   const lens = groups.get('lens');
   mesh(lens, extrude(roundedPath(2.29, 1.81, .40), .035, .013), palette.lens);
-  line(lens, [[-.96, .65, .042], [-.80, .78, .042], [.54, .78, .042]], palette.ink, .009);
+  // Fresnel-ish rim: a bright edge arc top-left and a fainter answer bottom-right.
+  line(lens, [[-.96, .65, .042], [-.80, .78, .042], [.54, .78, .042]], palette.ink, .011);
+  line(lens, [[.98, -.02, .042], [.90, -.30, .042], [.52, -.55, .042]], palette.ink, .007);
 
   // 04 — A separate display, the original MORI pixels, a folded FPC, and touch IC.
   const display = groups.get('display');
@@ -250,21 +265,37 @@ export function createHardwareScene(mount, { onContextLost }) {
   const screenMaterial = ownMaterial(new THREE.MeshBasicMaterial({ map: screenTexture, toneMapped: false }));
   // The screen plane stays inside the rounded panel's straight central area.
   mesh(display, plane(2.08, 1.53), screenMaterial, [0, 0, .085]);
+  // A soft halo so the pixel face reads lit through the lens in the closed pose.
+  const glowTexture = canvasTexture(256, 192, (ctx) => {
+    const gradient = ctx.createRadialGradient(128, 92, 8, 128, 96, 120);
+    gradient.addColorStop(0, '#c4e69a55'); gradient.addColorStop(.55, '#8fb96d22'); gradient.addColorStop(1, '#8fb96d00');
+    ctx.fillStyle = gradient; ctx.fillRect(0, 0, 256, 192);
+  });
+  mesh(display, plane(2.05, 1.5), ownMaterial(new THREE.MeshBasicMaterial({
+    map: glowTexture, transparent: true, blending: THREE.AdditiveBlending,
+    depthWrite: false, toneMapped: false, opacity: .8,
+  })), [0, 0, .088]);
   mesh(display, box(.65, .58, .025, .006), palette.flex, [.30, -1.08, -.06], [.25, 0, 0]);
   mesh(display, box(.65, .25, .025, .005), palette.flex, [.30, -1.42, -.15], [1.05, 0, 0]);
   for (let i = 0; i < 12; i++) line(display, [[.02 + i * .05, -.85, -.04], [.02 + i * .05, -1.3, -.12]], palette.gold, .005);
   solderPads(display, .04, -1.50, -.04, 11, .05);
   chip(display, -.57, -1.12, -.025, .28, .26, 'TOUCH');
 
-  // 05 — Caps, rubber contact discs, and three separate switch mechanisms.
+  // 05 — Domed caps with a shallow dish, rubber contact discs, and switches.
   const buttons = groups.get('buttons');
+  const capProfile = [
+    [0, .052], [.07, .075], [.14, .072], [.185, .052], [.205, .018], [.20, -.02], [.14, -.035], [0, -.035],
+  ].map(([x, y]) => new THREE.Vector2(x, y));
+  const capDome = ownGeometry(new THREE.LatheGeometry(capProfile, 28));
   [-.65, 0, .65].forEach((x, i) => {
     const y = i === 1 ? -.13 : 0;
-    mesh(buttons, cylinder(.204, .14), palette.button, [x, y, .045], [Math.PI / 2, 0, 0]);
+    mesh(buttons, capDome, palette.button, [x, y, .14], [Math.PI / 2, 0, 0]);
+    mesh(buttons, torus(.198, .012), palette.ink, [x, y, .145]);
+    mesh(buttons, cylinder(.17, .04), palette.rubber, [x, y, -.12], [Math.PI / 2, 0, 0]);
     mesh(buttons, cylinder(.17, .04), palette.rubber, [x, y, -.12], [Math.PI / 2, 0, 0]);
     mesh(buttons, box(.30, .30, .075), palette.steel, [x, y, -.22]);
     mesh(buttons, cylinder(.068, .04, 16), palette.black, [x, y, -.16], [Math.PI / 2, 0, 0]);
-    label(buttons, ['■', 'TALK', '⇄'][i], i === 1 ? .29 : .22, .19, [x, y, .119], { color: '#e3edce', size: i === 1 ? 44 : 78 });
+    label(buttons, ['■', 'TALK', '⇄'][i], i === 1 ? .29 : .22, .19, [x, y, .218], { color: '#e3edce', size: i === 1 ? 44 : 78 });
   });
 
   // 06 — Copper routing, vias, test pads, passives, connectors, and board silkscreen.
@@ -382,9 +413,9 @@ export function createHardwareScene(mount, { onContextLost }) {
   mesh(power, box(.18, .18, .12), palette.dark, [.27, -.09, .07]);
   label(power, 'USB-C / POWER PATH', 1.05, .12, [0, .35, .03], { color: '#c5ddb9', size: 25 });
 
-  // 15 — A shallow rear bowl, internal ribs, speaker vents, and a woven loop.
+  // 15 — A deep rear bowl, internal ribs, speaker vents, and a braided lanyard.
   const rear = groups.get('rear');
-  mesh(rear, extrude(pebble(.97), .10, .07), palette.shell, [0, 0, -.07]);
+  mesh(rear, extrude(pebble(.97), .13, .12, 5), palette.shellBack, [0, 0, -.09]);
   const rearLip = pebble(.975);
   rearLip.holes.push(pebble(.89, true));
   mesh(rear, extrude(rearLip, .20, .025), palette.inner, [0, 0, .045]);
@@ -394,15 +425,29 @@ export function createHardwareScene(mount, { onContextLost }) {
   }
   label(rear, 'MORI\nA LITTLE LIFE OF ITS OWN', 1.16, .42, [0, .58, .058], { size: 24 });
   mesh(rear, torus(.26, .065), palette.rim, [0, 2.05, -.05]);
+  // Two strands twist around the loop: a woven cord, not a rubber band.
   const cord = new THREE.CatmullRomCurve3([
     new THREE.Vector3(-.15, 2.23, -.06), new THREE.Vector3(-.23, 2.58, -.10),
     new THREE.Vector3(.07, 2.74, -.15), new THREE.Vector3(.25, 2.49, -.12), new THREE.Vector3(.13, 2.23, -.06),
   ]);
-  mesh(rear, ownGeometry(new THREE.TubeGeometry(cord, 40, .045, 8, false)), palette.rubber);
-  for (let i = 0; i < 22; i++) {
-    const point = cord.getPoint(i / 21);
-    mesh(rear, ownGeometry(new THREE.SphereGeometry(.048, 6, 4)), palette.inner, point.toArray()).scale.set(.8, .22, 1);
+  mesh(rear, ownGeometry(new THREE.TubeGeometry(cord, 48, .052, 10, false)), palette.rubber);
+  for (let i = 0; i < 26; i++) {
+    const t = i / 25;
+    const point = cord.getPoint(t);
+    const angle = t * Math.PI * 12;
+    const weave = mesh(rear, ownGeometry(new THREE.SphereGeometry(.053, 6, 4)),
+      i % 2 ? palette.inner : palette.rim,
+      [point.x + Math.cos(angle) * .028, point.y, point.z + Math.sin(angle) * .028]);
+    weave.scale.set(.85, .3, 1);
   }
+  // A short tail with a crimped metal end cap finishes the carry story.
+  const tail = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(.25, 2.49, -.12), new THREE.Vector3(.44, 2.60, -.14),
+    new THREE.Vector3(.52, 2.76, -.16),
+  ]);
+  mesh(rear, ownGeometry(new THREE.TubeGeometry(tail, 16, .048, 8, false)), palette.rubber);
+  mesh(rear, cylinder(.068, .15, 20), palette.steel, [.555, 2.82, -.165], [0, 0, -.5]);
+  mesh(rear, ownGeometry(new THREE.SphereGeometry(.058, 14, 10)), palette.steel, [.585, 2.885, -.17]);
 
   // 16 — Separate screws, slotted heads, brass inserts, and locating posts.
   const fasteners = groups.get('fasteners');
@@ -455,10 +500,10 @@ export function createHardwareScene(mount, { onContextLost }) {
   scene.environmentIntensity = .78;
   environment.dispose();
   pmrem.dispose();
-  const ambient = new THREE.HemisphereLight('#edf5e5', '#5c7157', 2.1);
-  const key = new THREE.DirectionalLight('#fff4df', 3.5);
+  const ambient = new THREE.HemisphereLight('#f2f6e8', '#5c7157', 2.1);
+  const key = new THREE.DirectionalLight('#ffe0b5', 3.5);
   key.position.set(-4, 7, 8);
-  const edge = new THREE.DirectionalLight('#d1e2ec', 2.6);
+  const edge = new THREE.DirectionalLight('#c3d9ec', 2.6);
   edge.position.set(6, 1, -4);
   scene.add(ambient, key, edge);
 
@@ -542,12 +587,13 @@ export function createHardwareScene(mount, { onContextLost }) {
     shadow.scale.set(1 + spread * 1.3, 1, 1);
   }
   function setShell(shell) {
+    // Subtle two-tone: light face, deeper rear/bumper, mid-tone interior.
     const colors = {
-      sage: ['#a9b991', '#647454', '#7f9070'],
-      cream: ['#e2d5b8', '#ac997b', '#c3b596'],
-      lavender: ['#c5b9da', '#8c7e9f', '#a79bb7'],
-    }[shell] || ['#a9b991', '#647454', '#7f9070'];
-    [palette.shell, palette.rim, palette.inner].forEach((source, i) => {
+      sage: ['#b5c39d', '#5c6b4d', '#7f9070', '#93a478'],
+      cream: ['#ece0c8', '#a08e6e', '#c3b596', '#d3c3a0'],
+      lavender: ['#d3c8e4', '#7f7194', '#a79bb7', '#b3a4c6'],
+    }[shell] || ['#b5c39d', '#5c6b4d', '#7f9070', '#93a478'];
+    [palette.shell, palette.rim, palette.inner, palette.shellBack].forEach((source, i) => {
       source.color.set(colors[i]);
       for (const map of partMaterials.values()) map.get(source)?.color.copy(source.color);
     });
@@ -555,12 +601,12 @@ export function createHardwareScene(mount, { onContextLost }) {
   }
   function setTheme(theme) {
     const light = theme === 'light';
-    scene.environmentIntensity = light ? .70 : .74;
-    ambient.intensity = light ? .85 : .75;
-    key.intensity = light ? 2.20 : 2.45;
-    edge.intensity = light ? 1.45 : 2.0;
-    renderer.toneMappingExposure = light ? .98 : 1.04;
-    shadowMaterial.opacity = light ? .36 : .66;
+    scene.environmentIntensity = light ? .82 : .62;
+    ambient.intensity = light ? 1.0 : .62;
+    key.intensity = light ? 2.35 : 2.7;
+    edge.intensity = light ? 1.3 : 2.1;
+    renderer.toneMappingExposure = light ? 1.12 : 1.0;
+    shadowMaterial.opacity = light ? .3 : .68;
     canvas.dataset.theme = light ? 'light' : 'dark';
   }
   function lost(event) {

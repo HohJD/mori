@@ -462,7 +462,9 @@ for (const width of [320, 390, 768, 1440]) {
     await page.evaluate(() => document.fonts.ready);
     await expect(page.locator('h1')).toBeVisible();
     for (const colorScheme of ['light', 'dark']) {
-      await page.emulateMedia({ colorScheme });
+      // The first visit is always light, so exercise the dark palette via the toggle.
+      if (colorScheme === 'dark') await page.locator('[data-theme-toggle]').click();
+      await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
       const layout = await page.evaluate(() => ({
         viewport: window.innerWidth,
         scrollWidth: document.documentElement.scrollWidth,
@@ -753,7 +755,9 @@ test('light and dark persist independently of companion reset, and update the re
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  // A dark system no longer changes the default: first visit is still light.
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await page.getByRole('button', { name: 'Switch to dark mode' }).click();
   await enterHardware(page);
   const darkCanvas = await page.locator('canvas').screenshot();
   for (const theme of ['dark', 'light']) {
@@ -801,29 +805,26 @@ test('light and dark persist independently of companion reset, and update the re
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
 
-test('theme follows the system until chosen and remains usable when storage is blocked', async ({ page }) => {
-  await page.emulateMedia({ colorScheme: 'light' });
+test('theme defaults to light until chosen and remains usable when storage is blocked', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.getByRole('button', { name: 'Switch to dark mode' }).click();
+  await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await page.getByRole('button', { name: 'Switch to light mode' }).click();
-  await page.emulateMedia({ colorScheme: 'light' });
-  await page.emulateMedia({ colorScheme: 'dark' });
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await page.addInitScript(() => {
     Object.defineProperty(window, 'localStorage', { get() { throw new Error('Storage disabled'); } });
   });
   await page.reload();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(page.locator('#persistence-text')).toContainText('Changes last only in this tab');
-  await page.getByRole('button', { name: 'Switch to light mode' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(page.locator('#persistence-text')).toContainText('Changes last only in this tab');
+  await page.getByRole('button', { name: 'Switch to dark mode' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await openWorld(page);
   await page.getByRole('button', { name: 'Feed', exact: true }).click();
   await expect(page.locator('#bond-count')).toHaveText('1 bond point');
   await page.reload();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 });
 
 test('unsupported WebGL uses detailed local vector parts with the same working inspector', async ({ page }) => {
@@ -1517,7 +1518,10 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
     for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       for (const theme of ['light', 'dark']) {
-        await page.emulateMedia({ colorScheme: theme });
+        // The system palette no longer chooses the theme; the header toggle does.
+        if (await page.locator('html').getAttribute('data-theme') !== theme) {
+          await page.locator('[data-theme-toggle]').click();
+        }
         await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
         await openSettings(page);
         await expect(page.locator('#unlock-form')).toBeVisible();

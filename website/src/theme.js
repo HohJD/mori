@@ -32,16 +32,9 @@ export function initTheme() {
 
   const root = document.documentElement;
   const buttons = [...document.querySelectorAll('[data-theme-toggle]')];
-  let systemPreference;
-  try {
-    systemPreference = window.matchMedia('(prefers-color-scheme: dark)');
-  } catch {
-    // A missing media-query API has the same light default as the bootstrap.
-  }
 
   let preference = readPreference();
   let currentTheme;
-  const systemTheme = () => systemPreference?.matches ? 'dark' : 'light';
 
   function applyTheme(theme) {
     const changed = currentTheme !== theme;
@@ -76,10 +69,6 @@ export function initTheme() {
     applyTheme(preference);
   }
 
-  function followSystem(event) {
-    if (preference === null) applyTheme(event.matches ? 'dark' : 'light');
-  }
-
   function followStorage(event) {
     // A companion save/reset is deliberately irrelevant to the theme.
     if (event.key !== STORAGE_KEY && event.key !== null) return;
@@ -88,27 +77,17 @@ export function initTheme() {
     } catch {
       return;
     }
-    // Removing/invalidating the preference in another tab restores system mode.
+    // Removing/invalidating the preference in another tab restores the default.
     preference = isTheme(event.newValue) ? event.newValue : null;
-    applyTheme(preference || systemTheme());
+    applyTheme(preference || 'light');
   }
 
   buttons.forEach((button) => button.addEventListener('click', toggleTheme));
-  if (systemPreference?.addEventListener) {
-    systemPreference.addEventListener('change', followSystem);
-  } else {
-    systemPreference?.addListener?.(followSystem);
-  }
   window.addEventListener('storage', followStorage);
-  applyTheme(preference || systemTheme());
+  applyTheme(preference || 'light');
 
   cleanupTheme = () => {
     buttons.forEach((button) => button.removeEventListener('click', toggleTheme));
-    if (systemPreference?.removeEventListener) {
-      systemPreference.removeEventListener('change', followSystem);
-    } else {
-      systemPreference?.removeListener?.(followSystem);
-    }
     window.removeEventListener('storage', followStorage);
     cleanupTheme = undefined;
   };

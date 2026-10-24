@@ -167,7 +167,7 @@ The 3D studio uses exactly pinned **Three.js 0.186.1** and **GSAP 3.15.0**
 - Native accessible dialogs and help disclosures, keyboard controls, focus
   indicators, and a reduced-motion mode without scroll/idle/reaction animations.
 - Full light/dark palettes, with an accessible sun/moon action in the header.
-  The first visit follows the system; an explicit choice is remembered separately
+  The first visit is light; an explicit choice is remembered separately
   from the companion. Resetting a Mori does **not** reset the theme.
 
 ## Inside the little device
@@ -237,7 +237,7 @@ production are separate worlds. Nothing synchronizes between devices.
 Local focus-task text is rendered with `textContent` and is never sent to AI.
 `mori-theme` contains only the explicit `light` or `dark` appearance preference.
 It is not part of `mori-world-v1`; blocked storage still permits a temporary
-in-memory theme choice, and an unchosen theme follows live system changes.
+in-memory theme choice, and an unchosen theme is always light.
 
 Storage is written only on user changes, startup/migration, and timer expiry,
 not on countdown ticks. Invalid records are normalized or discarded with a
@@ -329,7 +329,7 @@ website/src/hardware-model.js  Procedural Three.js parts, lighting, disposal
 website/src/hardware-fallback.js  Detailed local SVG alternative
 website/src/hardware-parts.js  Shared proposed-component descriptions
 website/src/hardware.css    Responsive sticky studio and static alternatives
-website/src/theme.js        System/persisted theme controller
+website/src/theme.js        Persisted light/dark theme controller
 website/src/theme.css       Full light/dark palettes and component overrides
 website/public/theme-init.js  Blocking pre-paint appearance bootstrap
 website/src/creature.js     Original pixel art and authored reactions

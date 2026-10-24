@@ -7,16 +7,11 @@
     const saved = window.localStorage.getItem('mori-theme');
     if (saved === 'light' || saved === 'dark') theme = saved;
   } catch {
-    // Private browsing or blocked storage must not prevent the system fallback.
+    // Private browsing or blocked storage still gets the light default.
   }
 
-  if (!theme) {
-    try {
-      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    } catch {
-      theme = 'light';
-    }
-  }
+  // First visit is always light; only an explicit saved choice overrides it.
+  if (!theme) theme = 'light';
 
   const root = document.documentElement;
   root.dataset.theme = theme;

@@ -22,7 +22,7 @@ export function initHardware(reducedMotion) {
   const abort = new AbortController();
   const listen = (target, event, handler) => target.addEventListener(event, handler, { signal: abort.signal });
   let selected = hardwareParts[0].id;
-  let progress = 0, isolated = false, isolatedAt = 0;
+  let progress = 0, isolated = false, isolatedAt = 0, isolatedScroll = 0;
   let model, gsap, ScrollTrigger, timeline, trigger, loadPromise, createScene;
   let active = true, sceneAttempted = false;
   let visible = false, frame = null, resize = true, destroyed = false, importFailed = false;
@@ -71,6 +71,7 @@ export function initHardware(reducedMotion) {
   function setIsolated(next) {
     isolated = next;
     isolatedAt = progress;
+    isolatedScroll = window.scrollY;
     isolateButton.setAttribute('aria-pressed', String(next));
     isolateButton.innerHTML = next ? 'See all parts <span aria-hidden="true">↙</span>' : 'Look closer <span aria-hidden="true">↗</span>';
     schedule();
@@ -94,7 +95,11 @@ export function initHardware(reducedMotion) {
     scrub.setAttribute('aria-valuetext', `${Math.round(progress * 100)} percent. ${chapter.slice(5)}.`);
     find('[data-hardware-view="assembled"]').setAttribute('aria-pressed', String(spread < .001));
     find('[data-hardware-view="exploded"]').setAttribute('aria-pressed', String(phase === 'exploded'));
-    if (isolated && Math.abs(progress - isolatedAt) > .025) setIsolated(false);
+    // In scroll mode only a real scroll un-isolates: a deferred ScrollTrigger
+    // refresh can remap progress without the scroll position ever moving.
+    if (isolated && (trigger
+      ? Math.abs(window.scrollY - isolatedScroll) > (trigger.end - trigger.start) * .025
+      : Math.abs(progress - isolatedAt) > .025)) setIsolated(false);
     schedule();
   }
   function render() {
