@@ -288,6 +288,7 @@ test('adopt, use all local habitat buttons, then preview across reload without a
   await expect(page.locator('#session-context')).toContainText('no wins or minutes saved');
   await page.clock.fastForward(3000);
   await page.reload();
+  await openWorld(page);
   await expect(page.locator('#habitat-title')).toHaveText('Miso’s little corner');
   await expect(page.locator('body')).toHaveAttribute('data-shell', 'lavender');
   await expect(page.getByRole('timer')).toHaveText('00:07');
@@ -295,6 +296,7 @@ test('adopt, use all local habitat buttons, then preview across reload without a
   await expect(page.getByText('Did you finish your one thing?', { exact: true })).toBeVisible();
   await expect(page.locator('#win-total')).toHaveText('0');
   await page.reload();
+  await openWorld(page);
   await expect(page.getByRole('button', { name: 'Finish preview (no win)', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Finish preview (no win)', exact: true }).click();
   await expect(page.locator('#focus-status')).toContainText('No win, minutes, or bond points added');
@@ -302,6 +304,7 @@ test('adopt, use all local habitat buttons, then preview across reload without a
   await expect(page.locator('#minute-total')).toHaveText('0');
   await expect(page.locator('#bond-count')).toHaveText('4 bond points');
   await page.reload();
+  await openWorld(page);
   await expect(page.locator('#focus-form')).toBeVisible();
   await expect(page.locator('#win-total')).toHaveText('0');
 });
@@ -316,6 +319,7 @@ test('real focus pauses, resumes, awaits confirmation, saves once, and can be fo
   await page.getByRole('button', { name: 'Pause', exact: true }).click();
   await page.clock.fastForward(120_000);
   await page.reload();
+  await openWorld(page);
   await expect(page.getByRole('timer')).toHaveText('04:00');
   await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Resume', exact: true }).click();
@@ -323,6 +327,7 @@ test('real focus pauses, resumes, awaits confirmation, saves once, and can be fo
   await expect(page.getByText('Did you finish your one thing?', { exact: true })).toBeVisible();
   await expect(page.locator('#win-total')).toHaveText('0');
   await page.reload();
+  await openWorld(page);
   await page.getByRole('button', { name: 'Yes, save my win' }).click();
   await expect(page.locator('#win-total')).toHaveText('1');
   await expect(page.locator('#minute-total')).toHaveText('5');
@@ -330,6 +335,7 @@ test('real focus pauses, resumes, awaits confirmation, saves once, and can be fo
   await expect(page.locator('#room')).toHaveClass(/has-plant/);
   await expect(page.locator('#wins-list')).toContainText('Write one honest paragraph');
   await page.reload();
+  await openWorld(page);
   await expect(page.locator('#win-total')).toHaveText('1');
   await expect(page.locator('#focus-form')).toBeVisible();
   await expect(page.locator('#bond-count')).toHaveText('5 bond points');
@@ -350,6 +356,7 @@ test('real focus pauses, resumes, awaits confirmation, saves once, and can be fo
   await expect(page.locator('#focus-form')).toBeVisible();
   await page.clock.fastForward(600_000);
   await page.reload();
+  await openWorld(page);
   await expect(page.locator('#focus-form')).toBeVisible();
   await expect(page.locator('#win-total')).toHaveText('0');
 });
@@ -525,7 +532,7 @@ test.describe('first-load navigation', () => {
 
   // Each test gets a fresh browser context; the engine is still lazy when
   // genuine browser navigation begins. Do not use enterHardware() here.
-  test('fresh mobile /#inside reaches and renders the studio', async ({ page }) => {
+  test('fresh mobile /#inside load opens Talk at the top; the device link then renders the studio', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     // Late setup must not displace the view while its 3D engine loads.
     await page.route('**/api/config', async (route) => {
@@ -533,7 +540,14 @@ test.describe('first-load navigation', () => {
       await route.continue();
     });
     await page.goto('/#inside');
+    // A full load ignores the hash: Talk at the top, hash stripped, no studio download.
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.locator('body')).toHaveAttribute('data-view', 'talk');
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
     await expect(page.locator('#assistant-readiness')).not.toHaveText('Checking setup');
+    await expect(page.locator('.hardware-canvas canvas')).toHaveCount(0);
+    await page.getByRole('navigation', { name: 'Main navigation' })
+      .getByRole('link', { name: 'Device', exact: true }).click();
     await expect(page.locator('#inside')).toHaveAttribute('data-renderer', 'webgl', { timeout: 15_000 });
     await expect(page.locator('#inside')).toHaveAttribute('data-trigger-count', '1');
     await expectAnchorSettled(page, '#inside');
@@ -606,28 +620,34 @@ test.describe('first-load navigation', () => {
     await expect(page.locator('#inside')).toHaveAttribute('data-trigger-count', '0');
   });
 
-  test('deep wins, reload, aliases and back/forward select a single view without delayed scroll correction', async ({ page }) => {
+  test('fresh deep links open Talk at the top; aliases, back/forward and reload stay honest', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/#wins');
-    await expect(page.locator('body')).toHaveAttribute('data-view', 'world');
-    await expect(page.locator('#wins-title')).toBeInViewport();
-    await page.reload();
-    await expect(page.locator('#wins-title')).toBeInViewport();
-    await openTalk(page);
-    await expect(page.locator('#talk-title')).toBeFocused();
+    // Fresh loads ignore the hash: Talk at the top, hash stripped.
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.locator('body')).toHaveAttribute('data-view', 'talk');
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    await expect(page.locator('#talk-title')).toBeInViewport();
     await page.locator('#chat-draft').fill('Keep this while I wander.');
     await openWorld(page);
+    await expect(page.locator('#play-title')).toBeInViewport();
     await page.goBack();
     await expect(page.locator('body')).toHaveAttribute('data-view', 'talk');
     await expect(page.locator('#chat-draft')).toHaveValue('Keep this while I wander.');
-    await page.goBack();
-    await expect(page.locator('#wins-title')).toBeInViewport();
     await page.goForward();
+    await expect(page.locator('body')).toHaveAttribute('data-view', 'world');
+    await expect(page.locator('#play-title')).toBeInViewport();
+    // In-session hash changes still navigate through hashchange.
+    await page.evaluate(() => { location.hash = '#wins'; });
+    await expect(page.locator('#wins-title')).toBeInViewport();
+    await page.evaluate(() => { location.hash = '#not-a-view'; });
     await expect(page.locator('body')).toHaveAttribute('data-view', 'talk');
-    await page.goto('/#top');
     await expect(page.locator('#voice-talk')).toBeInViewport();
-    await page.goto('/#not-a-view');
+    // A reload is a fresh load: Talk at the top again.
+    await page.reload();
+    await expect(page).toHaveURL(/\/$/);
     await expect(page.locator('body')).toHaveAttribute('data-view', 'talk');
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
     await expect(page.locator('#voice-talk')).toBeInViewport();
   });
 });

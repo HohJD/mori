@@ -92,9 +92,10 @@ The 3D studio uses exactly pinned **Three.js 0.186.1** and **GSAP 3.15.0**
   are quiet header links, including on mobile. These are same-document hash
   views, not separate pages or a routing framework. Inactive views are natively
   `hidden` and `inert`: no home-page height and no stray keyboard stops.
-- Fresh deep links, reload, and browser back/forward reveal the destination
-  before scrolling. Navigation does not wait on fonts or 3D imports to scroll
-  again later. An unknown hash safely shows Talk.
+- A fresh visit or reload always opens Talk at the top of the page; the URL
+  hash is stripped and the studio stays unloaded. In-session header links and
+  browser back/forward still reveal each destination before scrolling, without
+  waiting on fonts or 3D imports. An unknown hash safely shows Talk.
 - **Activity** reveals exact models, response timing, replies and usage.
   **Settings** holds read-aloud, owner unlock/lock, AI connections and expandable
   help/privacy. The everyday screen has one human status, not a metrics dashboard.
@@ -293,7 +294,7 @@ interactions, preview/reload, pause/resume, confirmed real wins, cancellation,
 forget/reset, storage failures, keyboard dialogs, self-hosted assets, and
 320 / 390 / 768 / 1440px layouts in both themes (including 320×568 first-screen
 controls). View checks cover hidden content/tab order, progressive disclosure,
-deep links, reload/back/forward, retained drafts and cancelled hidden voice.
+deep links landing on Talk, reload/back/forward, retained drafts and cancelled hidden voice.
 Hardware checks exercise actual WebGL draws and
 mesh transforms (including identical closed renders and reverse scroll), all
 16 selectors, isolated close-ups, short mobile windows, live reduced-motion

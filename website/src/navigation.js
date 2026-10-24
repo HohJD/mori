@@ -79,7 +79,10 @@ export function initNavigation({ beforeChange, onChange, onLayout }) {
   window.addEventListener('pageshow', (event) => {
     if (event.persisted) show(location.hash, { focus: false });
   });
-  show(location.hash, { focus: false });
+  // A full load always opens Talk at the top; the hash only steers in-session
+  // navigation. Stripping it keeps handledHash honest for the next popstate.
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  show('', { focus: false });
   return { navigate };
 }
 
