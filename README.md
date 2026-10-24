@@ -1,5 +1,7 @@
 # MORI — a little life of its own
 
+[Live site](https://mori-drab.vercel.app) · [GitHub repository (private)](https://github.com/HohJD/mori)
+
 A pocket-companion **design concept** and a working, local-first web playground.
 The site preserves the original sage/lime identity, CSS-layered pebble device,
 and authored pixel creature. It adds a useful, human-confirmed focus ritual.
@@ -138,5 +140,5 @@ private research, old hosting metadata, archives, local configuration, and
 test artifacts from deployment uploads. Security headers disable microphone,
 camera, and geolocation permissions.
 
-GitHub and production deployment links will be documented after publishing
-and verification. No production deployment is implied by a local build.
+The Vercel project `hohjds-projects/mori` is connected to `HohJD/mori`.
+Pushes to `main` deploy to production at https://mori-drab.vercel.app.
