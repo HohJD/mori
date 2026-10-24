@@ -11,14 +11,17 @@ import { createReactions, mountCreatures } from './creature.js';
 import { mountDevices } from './device.js';
 import { initHardware } from './hardware.js';
 import { initAssistant } from './assistant.js';
+import { initDisclosures, initNavigation } from './navigation.js';
 
 const $ = (selector) => document.querySelector(selector);
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 initTheme();
 mountDevices();
-initHardware(reducedMotion);
 mountCreatures();
-initAssistant();
+const assistant = initAssistant({ showTalk: () => navigation.navigate('#talk', { focus: false }) });
+initDisclosures();
+let hardware;
+let navigation;
 const reactions = createReactions(reducedMotion);
 
 const persistence = createPersistence((status, message) => {
@@ -215,7 +218,7 @@ function requireMeaningfulText(input, error, message) {
 }
 
 function showPlayground() {
-  $('#play').scrollIntoView({ behavior: reducedMotion.matches ? 'instant' : 'smooth' });
+  navigation.navigate('#play', { focus: false });
   $('#habitat-title').focus({ preventScroll: true });
 }
 
@@ -361,3 +364,20 @@ window.addEventListener('storage', (event) => {
 // One startup write handles name migration, repair, and an elapsed restored timer.
 persistence.save(state);
 render();
+// Restore local layout before resolving deep links (especially #wins).
+// No inspector, WebGL imports, or timeline until Device is actually open.
+navigation = initNavigation({
+  beforeChange(next, previous) {
+    if (previous === 'device') hardware?.setActive(false);
+  },
+  onChange(view) {
+    assistant.setActive(view === 'talk');
+    if (view === 'device') {
+      hardware ||= initHardware(reducedMotion);
+      hardware.setActive(true);
+    }
+  },
+  onLayout(view) {
+    if (view === 'device') hardware.refresh();
+  },
+});

@@ -2,12 +2,12 @@
 
 [Live site](https://mori-drab.vercel.app) · [GitHub repository (private)](https://github.com/HohJD/mori)
 
-A friendly **voice and text interface for AI**, paired with a pocket-device
-**design concept**. Choose OpenAI (GPT), Claude, or Gemini. Ask, write, summarise,
-plan, translate, or explain with simple buttons. The sage/lime design, full
-light/dark themes, original pixel face, and detailed Three.js/GSAP hardware
-studio remain. The local companion and focus ritual are optional little extras,
-not the main mission.
+A quiet **voice and text workspace for AI**. One screen, one pixel Mori, three
+provider choices, and a place to talk or type. Warm ivory/forest by day,
+charcoal/lime by night. The detailed pocket-device **design concept** and local
+companion/focus ritual live in their own views, not below a long marketing page.
+The live URL above is the published site; local changes appear there only after
+an owner-authorized deployment.
 
 **AI needs owner unlock and a configured server route.** The linked Vercel
 project has verified **OpenAI `openai/gpt-5.4-nano` through AI Gateway using its
@@ -40,7 +40,7 @@ world, hardware studio, and themes work without secrets.
 To enable AI, follow [docs/AI_CONNECTIONS.md](docs/AI_CONNECTIONS.md). The
 one-time `npm run setup:ai` helper creates a private owner access code without
 overwriting an existing private settings file. Keep the code **server-side**
-and enter it only in Connections to unlock. Choose either route:
+and enter it only in Mori’s Settings dialog to unlock. Choose either route:
 
 - **Linked Vercel project / verified OpenAI Gateway:** retain the owner code in
   `.env.ai.local` and explicitly opt in:
@@ -83,13 +83,31 @@ The 3D studio uses exactly pinned **Three.js 0.186.1** and **GSAP 3.15.0**
 (including ScrollTrigger). Software notices ship in
 `website/public/software-licenses.txt`; GSAP uses its standard no-charge license.
 
-## Talk, switch, do
+## A small workspace
 
-- The main console lives at `#talk`. Provider selection, separate conversation
+- **Talk** is the default view (`/`, `#talk`, or the legacy `#top`). The logo
+  always returns here. Talk, the composer and Send fit the first screen, including
+  a compact 320×568 window; there is no empty transcript panel before a reply.
+- **Device** (`#inside`) and **Your world** (`#play`, with `#wins` for saved wins)
+  are quiet header links, including on mobile. These are same-document hash
+  views, not separate pages or a routing framework. Inactive views are natively
+  `hidden` and `inert`: no home-page height and no stray keyboard stops.
+- Fresh deep links, reload, and browser back/forward reveal the destination
+  before scrolling. Navigation does not wait on fonts or 3D imports to scroll
+  again later. An unknown hash safely shows Talk.
+- **Activity** reveals exact models, response timing, replies and usage.
+  **Settings** holds read-aloud, owner unlock/lock, AI connections and expandable
+  help/privacy. The everyday screen has one human status, not a metrics dashboard.
+  Native dialogs and the small disclosures support keyboard use and focus return.
+
+### Talk, switch, do
+
+- Provider selection, separate conversation
   logs, a multiline composer, clear connection states, and **New conversation**
   work with mouse, touch, or keyboard. Enter sends; Shift+Enter adds a line.
-- **Ask / Write / Summarise / Plan / Translate / Explain** select a real request
-  mode and helpful instructions. “Use an example” fills an editable draft.
+- **Write / Summarise / Plan** are the three common shortcuts. **More** holds
+  **Ask / Translate / Explain**, the current mode’s help and **Use an example**.
+  All six modes select real request instructions; examples fill an editable draft.
   Selecting an action or switching providers never sends a made-up request.
 - **Talk** explicitly starts one turn of browser speech recognition, adds the
   final words to the draft, and sends to the selected, unlocked provider.
@@ -99,18 +117,23 @@ The 3D studio uses exactly pinned **Three.js 0.186.1** and **GSAP 3.15.0**
 - Voice is capability-detected. Unsupported speech, denied microphone
   permission, no speech, and browser speech-network errors have typing fallbacks.
   No microphone is requested on load. Browser speech may process audio off-device.
-- **Stop** ends recognition and playback and aborts waiting for an AI request.
-  Provider switching, New conversation, and leaving the page also cancel.
+- **Stop** appears while busy. It ends recognition and playback and aborts waiting
+  for an AI request. Provider switching, New conversation, leaving Talk for
+  another view, and leaving the page also cancel. Returning to Talk keeps each
+  provider’s draft, mode and history in memory, without restarting or sending.
   Late/cancelled replies cannot appear in another provider’s chat or add metrics.
   Cancellation cannot guarantee that a provider has not already processed a request.
-- The physical hero’s three controls are **Stop/back · Talk · Switch agent**.
-  Its screen follows explicit assistant events, not companion/timer renders.
-- **Connections** checks server configuration, unlocks through a server-set
+- The original illustrated three-button device is under **Try the three-button
+  idea** in Device. **Stop/back · Talk · Switch agent** still work; Talk returns
+  to the visible workspace before starting. Its screen follows assistant events,
+  not companion/timer renders.
+- **Settings → AI connections** checks server configuration. **Unlock Mori**
+  appears on the locked workspace and opens the native owner form. It uses a server-set
   HttpOnly session cookie, and locks access again. The access code is never
   persisted in browser storage or echoed into the page. “Ready to try” means
   configured and unlocked, **not** verified healthy; only a received response
   earns “Replied this visit.” Expired access asks for a new unlock.
-- Metrics show the selected provider/model, completed replies this page visit,
+- **Activity** shows the selected model, completed replies this page visit,
   the last measured request-to-complete-response round trip (not first-token
   latency), and provider-reported tokens. Missing usage is unknown or explicitly
   incomplete, not zero. Partial responses are identified and not counted as
@@ -141,7 +164,7 @@ The 3D studio uses exactly pinned **Three.js 0.186.1** and **GSAP 3.15.0**
   minutes, excluding paused time). Totals describe retained wins, not a lifetime
   tally. Forgetting a win removes its task/date/minutes but keeps earned bond.
   Reset requires confirmation and clears the entire local world and timer.
-- Native accessible dialogs and FAQ disclosures, keyboard controls, focus
+- Native accessible dialogs and help disclosures, keyboard controls, focus
   indicators, and a reduced-motion mode without scroll/idle/reaction animations.
 - Full light/dark palettes, with an accessible sun/moon action in the header.
   The first visit follows the system; an explicit choice is remembered separately
@@ -170,12 +193,16 @@ anything; the independent web console can use browser voice only when invited.
   Small screens use the same complete native select and previous/next controls.
 - **Look closer** isolates and enlarges the selected group, including its
   subcomponents. **See all parts** returns to the exploded view. The nearby
-  little-world link always lets you leave the study.
+  **Back to Talk** link and sticky header always let you leave the study.
 - The seed-shaped model, cutout enclosure, screen's original MORI pixels, board
   traces, chips, RF shield, metallic battery, speaker, ribbon cable, contacts,
   and fasteners are generated locally. Lighting uses a procedural room environment,
   not remote assets. Shell colors and both themes update the live scene.
-- Three.js, the model, and GSAP load only as the studio approaches the viewport.
+- The inspector is initialized only when Device opens. Three.js, the model, and
+  GSAP load only when that visible studio approaches the viewport. Talk and Your
+  world never load them. Leaving Device removes its scroll trigger and cancels
+  rendering, even if an import is still in flight. Returning reuses the inspector
+  and scene, resizes, and safely refreshes a single active trigger.
   Rendering is demand-driven, stops offscreen/in a hidden tab, and caps pixel
   ratio at 1.7. Resize, theme, selection, and shell changes invalidate a frame;
   there is no endless GPU render loop. Geometry/material/texture resources and
@@ -249,7 +276,7 @@ unlock success/failure/expiry/lock, mode payloads, provider-isolated histories,
 plain-text replies, real-response metrics, unknown/partial usage, new chat,
 limits, retry, network errors, and cancellation even when a stale transport
 ignores abort. Injected Web Speech fakes verify explicit start, one-turn final
-transcripts, read-aloud, stop/switch/pagehide cleanup, unsupported browsers, and
+transcripts, read-aloud, stop/switch/view-exit/pagehide cleanup, unsupported browsers, and
 permission/no-speech/network errors. **These do not verify actual provider
 inference, model availability, real microphone permissions, or device audio.**
 A separate, bounded owner-approved **UI integration check** verified unlock,
@@ -264,7 +291,10 @@ automated suite.
 Retained tests cover adoption, text-injection safety, distinct
 interactions, preview/reload, pause/resume, confirmed real wins, cancellation,
 forget/reset, storage failures, keyboard dialogs, self-hosted assets, and
-320 / 390 / 768 / 1440px layouts. Hardware checks exercise actual WebGL draws and
+320 / 390 / 768 / 1440px layouts in both themes (including 320×568 first-screen
+controls). View checks cover hidden content/tab order, progressive disclosure,
+deep links, reload/back/forward, retained drafts and cancelled hidden voice.
+Hardware checks exercise actual WebGL draws and
 mesh transforms (including identical closed renders and reverse scroll), all
 16 selectors, isolated close-ups, short mobile windows, live reduced-motion
 cleanup, theme/shell sync, AA UI text contrast, system/blocked-storage preferences,
@@ -275,24 +305,25 @@ For resource-constrained machines, append `-- --workers=2` to the browser comman
 Optional review screenshots (the directory must already exist):
 
 ```sh
-mkdir -p /tmp/mori-voice-review
+mkdir -p /tmp/mori-simple-review
 MORI_SCREENSHOTS=1 PLAYWRIGHT_CHANNEL=chrome npm run test:browser
 ```
 
-These write `/tmp/mori-voice-review/mori-desktop.png` and
-`/tmp/mori-voice-review/mori-mobile.png`. Test reports and screenshots are not source.
+These write `/tmp/mori-simple-review/mori-desktop.png` and
+`/tmp/mori-simple-review/mori-mobile.png`. Test reports and screenshots are not source.
 
 ## Repository map
 
 ```text
 website/index.html          Semantic page, forms, and native dialogs
 website/src/main.js         DOM/controller and explicit user actions
+website/src/navigation.js   Hidden hash views, anchors, disclosure focus handling
 website/src/assistant.js    Provider-isolated chat, connection gate, metrics
 website/src/voice.js        Cancellable one-turn native browser speech
-website/src/assistant.css   Responsive voice console and connection sheet
+website/src/assistant.css   Quiet workspace, responsive controls, Settings/Activity
 website/src/state.js        Pure normalization, focus/reward, and bond model
 website/src/storage.js      Optional local storage and truthful save status
-website/src/device.js       Original lightweight interactive hero device
+website/src/device.js       Original interactive device, now disclosed in Device
 website/src/hardware.js     Lazy studio controller, GSAP timeline, inspector
 website/src/hardware-model.js  Procedural Three.js parts, lighting, disposal
 website/src/hardware-fallback.js  Detailed local SVG alternative

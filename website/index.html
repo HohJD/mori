@@ -13,131 +13,106 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <title>MORI — Your AI. Within reach.</title>
   </head>
-  <body data-shell="sage">
+  <body data-shell="sage" data-view="talk">
     <a class="skip-link" href="#main">Skip to content</a>
     <header class="site-header page-width">
-      <a class="logo" href="#top" aria-label="Mori home"><span class="logo-mark" aria-hidden="true"></span>mori</a>
+      <a class="logo" href="#talk" aria-label="Mori home — Talk"><span class="logo-mark" aria-hidden="true"></span>mori</a>
       <nav aria-label="Main navigation">
-        <a href="#talk">Talk to Mori</a>
-        <a href="#inside">The little device</a>
-        <a href="#play">Your little world</a>
+        <a href="#talk" data-view-link="talk" class="talk-nav" aria-current="page">Talk</a>
+        <a href="#inside" data-view-link="device">Device</a>
+        <a href="#play" data-view-link="world" aria-label="Your world"><span class="wide-label">Your </span>world</a>
       </nav>
       <button type="button" class="theme-toggle icon-button" data-theme-toggle></button>
-      <button type="button" class="button button-outline header-adopt" data-connections>Connections <span aria-hidden="true">↗</span></button>
+      <button type="button" class="settings-button icon-button" data-connections aria-label="Settings and connections" title="Settings and connections"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2.5"/><circle cx="15" cy="17" r="2.5"/></svg></button>
     </header>
 
     <main id="main" tabindex="-1">
-      <noscript><p class="noscript page-width">Explore the MORI device concept below. Enable JavaScript for the AI console and local companion. AI needs owner setup; voice also needs a compatible browser and your permission.</p></noscript>
-      <section class="hero" id="top" aria-labelledby="hero-title">
-        <div class="hero-grid page-width">
-          <div class="hero-copy">
-            <p class="eyebrow"><span class="hero-spark" aria-hidden="true">✳</span>A little less friction. A little more possibility.</p>
-            <h1 id="hero-title">Your AI.<br><em>Within reach.</em></h1>
-            <p class="hero-intro">Talk it through. Make something. Ask another question. Your favourite AI, a few simple buttons, and a little personality.</p>
-            <div class="hero-actions">
-              <a class="button button-primary" href="#talk">Let’s talk <span aria-hidden="true">↗</span></a>
-              <a class="text-link" href="#inside">Meet the device <span aria-hidden="true">↓</span></a>
-            </div>
-            <p class="hero-note">A working web console, once connected. A little device, still a concept.</p>
-            <div class="hero-providers" aria-label="Supported model providers"><span>OpenAI <small>GPT</small></span><i aria-hidden="true">/</i><span>Claude</span><i aria-hidden="true">/</i><span>Gemini</span></div>
-          </div>
-          <div class="hero-art">
-            <div class="orbit orbit-one" aria-hidden="true"></div>
-            <div class="orbit orbit-two" aria-hidden="true"></div>
-            <span class="art-label eyebrow">M–01 / <span data-shell-label>Sage</span> study</span>
-            <div class="device-mount hero-device" data-device="hero"></div>
-            <div class="device-callout"><span class="callout-line" aria-hidden="true"></span><span>Stop. Talk. Switch.<br>Small buttons. Big possibilities.</span></div>
-            <p class="art-caption"><span class="tiny-cross" aria-hidden="true">+</span> FIG. 001 — ONE LITTLE DEVICE. YOUR AI, ON TAP.</p>
-          </div>
-        </div>
-        <div class="hero-bottom page-width">
-          <a href="#talk"><span class="circle-arrow" aria-hidden="true">↓</span> A good place to start</a>
-          <span class="eyebrow">Less navigating. More <span class="lime">just asking.</span></span>
-          <span class="hero-coordinates">VOICE + TEXT / YOUR CHOICE</span>
-        </div>
-      </section>
-
-      <section class="section page-width talk-section" id="talk" aria-labelledby="talk-title">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow lime">01 / Talk. Switch. Make something.</p>
-            <h2 id="talk-title">What’s on<br>your <em>mind?</em></h2>
-          </div>
-          <p class="section-intro">A big question. A messy first draft.<br>Pick an AI and start where you are.</p>
-        </div>
+      <noscript><p class="noscript page-width">Enable JavaScript to use Mori’s AI console, device study, and local world. AI access needs owner setup.</p></noscript>
+      <div class="app-view" data-app-view="talk">
+      <section class="talk-section" id="talk" aria-labelledby="talk-title">
         <div class="assistant-console" id="assistant-console" data-phase="idle">
+          <div class="talk-heading">
+            <h1 id="talk-title" tabindex="-1" data-view-heading>What’s on your <em>mind?</em></h1>
+          </div>
           <div class="assistant-toolbar">
             <div class="agent-picker" role="group" aria-label="Choose your AI">
-              <button type="button" data-provider="openai" aria-pressed="true" aria-label="OpenAI (GPT)"><span class="agent-mark" aria-hidden="true">◎</span><span>OpenAI <small>GPT</small></span></button>
+              <button type="button" data-provider="openai" aria-pressed="true" aria-label="OpenAI (GPT)"><span class="agent-mark" aria-hidden="true">◎</span><span>OpenAI</span></button>
               <button type="button" data-provider="claude" aria-pressed="false" aria-label="Claude"><span class="agent-mark" aria-hidden="true">✳</span><span>Claude</span></button>
               <button type="button" data-provider="gemini" aria-pressed="false" aria-label="Gemini"><span class="agent-mark" aria-hidden="true">✧</span><span>Gemini</span></button>
             </div>
-            <button type="button" class="console-link" data-connections>Connections <span aria-hidden="true">↗</span></button>
           </div>
-          <div class="assistant-layout">
-            <aside class="voice-panel" aria-label="Voice controls">
-              <div class="voice-topline"><span class="eyebrow">A familiar little face</span><span class="readiness-badge" id="assistant-readiness">Checking setup</span></div>
-              <div class="voice-presence" aria-hidden="true"><span class="presence-ring"></span><span class="presence-ring ring-two"></span><div class="assistant-avatar" data-creature></div><span class="presence-spark">✳</span></div>
-              <p class="voice-phase" id="voice-phase">Idle</p>
-              <h3 id="active-agent-name">OpenAI <small>(GPT)</small></h3>
-              <p class="agent-model" id="active-agent-model">Checking model…</p>
-              <div class="voice-buttons">
-                <button type="button" class="talk-button" id="voice-talk" aria-label="Talk — listen once and send" aria-describedby="voice-help">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="8.5" y="3" width="7" height="12" rx="3.5"/><path d="M5.5 11v1a6.5 6.5 0 0 0 13 0v-1M12 18.5V22m-3 0h6"/></svg>
-                  <span>Talk</span><span class="talk-arrow" aria-hidden="true">↗</span>
-                </button>
-                <button type="button" class="stop-button" id="assistant-stop" disabled><span aria-hidden="true">■</span> Stop</button>
+          <div class="voice-row" aria-label="Voice controls">
+            <div class="voice-presence" aria-hidden="true"><span class="presence-ring"></span><div class="assistant-avatar" data-creature></div></div>
+            <button type="button" class="talk-button" id="voice-talk" aria-label="Talk — listen once and send" aria-describedby="voice-help">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="8.5" y="3" width="7" height="12" rx="3.5"/><path d="M5.5 11v1a6.5 6.5 0 0 0 13 0v-1M12 18.5V22m-3 0h6"/></svg>
+              <span>Talk</span><span class="talk-arrow" aria-hidden="true">↗</span>
+            </button>
+            <button type="button" class="stop-button" id="assistant-stop" hidden><span aria-hidden="true">■</span> Stop</button>
+          </div>
+          <p class="voice-help" id="voice-help">Listens once. Sends when you finish.</p>
+          <div class="assistant-notice" id="assistant-notice">
+            <p id="assistant-status" role="status" aria-live="polite" aria-atomic="true">Checking connections…</p>
+            <button type="button" class="readiness-action" id="assistant-setup" data-connections hidden><span id="setup-label">Settings</span><span aria-hidden="true">↗</span></button>
+            <button type="button" id="assistant-retry" hidden>Retry <span aria-hidden="true">↗</span></button>
+          </div>
+          <div class="chat-scroll" id="chat-scroll" tabindex="0" role="region" aria-label="Conversation" hidden>
+            <div class="chat-transcript" id="chat-transcript" role="log" aria-label="Conversation transcript" aria-live="polite" aria-relevant="additions"></div>
+          </div>
+          <form id="chat-form" class="chat-form">
+            <label class="visually-hidden" for="chat-draft" id="draft-label">Ask anything</label>
+            <div class="composer-shell">
+              <textarea id="chat-draft" name="message" rows="2" maxlength="4000" placeholder="Or type what’s on your mind…" aria-describedby="composer-hint" enterkeyhint="enter"></textarea>
+              <div class="composer-bottom">
+                <span id="composer-mode">Ask anything</span>
+                <button type="submit" class="button button-primary" id="send-message" disabled>Send <span aria-hidden="true">↑</span></button>
               </div>
-              <label class="speak-toggle"><input type="checkbox" id="speak-replies" checked><span>Read replies aloud</span></label>
-              <p class="voice-help" id="voice-help">Talk listens once, adds your words to the draft, and sends when you finish. Stop at any time.</p>
-              <p class="speech-support" id="speech-support"></p>
-              <button type="button" class="type-instead" id="type-instead">Or type instead <span aria-hidden="true">↓</span></button>
-            </aside>
-            <div class="conversation-panel">
-              <div class="conversation-heading">
-                <div><h3 id="conversation-title">A conversation with OpenAI</h3><p>Separate for each AI. Just for this visit.</p></div>
-                <button type="button" class="new-conversation" id="new-conversation" aria-label="New conversation" title="Clear only this AI’s conversation"><span aria-hidden="true">＋</span><span>New conversation</span></button>
-              </div>
-              <div class="quick-actions" role="group" aria-label="What would you like to do?">
-                <button type="button" data-mode="chat" aria-pressed="true"><span aria-hidden="true">↗</span> Ask</button>
-                <button type="button" data-mode="write" aria-pressed="false"><span aria-hidden="true">✎</span> Write</button>
-                <button type="button" data-mode="summarize" aria-pressed="false"><span aria-hidden="true">≡</span> Summarise</button>
-                <button type="button" data-mode="plan" aria-pressed="false"><span aria-hidden="true">☷</span> Plan</button>
-                <button type="button" data-mode="translate" aria-pressed="false"><span aria-hidden="true">あ</span> Translate</button>
-                <button type="button" data-mode="explain" aria-pressed="false"><span aria-hidden="true">✧</span> Explain</button>
-              </div>
-              <div class="chat-scroll" id="chat-scroll" tabindex="0" role="region" aria-label="Conversation">
-                <div class="chat-empty" id="chat-empty"><span aria-hidden="true">✳</span><h4>A little space to think out loud.</h4><p id="empty-guidance">Once your AI is connected, your questions and its replies will appear here.</p></div>
-                <div class="chat-transcript" id="chat-transcript" role="log" aria-label="Conversation transcript" aria-live="polite" aria-relevant="additions"></div>
-              </div>
-              <div class="assistant-notice" id="assistant-notice">
-                <p id="assistant-status" role="status" aria-live="polite" aria-atomic="true">Checking this Mori’s connections…</p>
-                <div class="notice-actions"><button type="button" id="assistant-retry" hidden>Retry message <span aria-hidden="true">↗</span></button><button type="button" id="assistant-setup" data-connections>Open connections <span aria-hidden="true">↗</span></button></div>
-              </div>
-              <form id="chat-form" class="chat-form">
-                <div class="composer-label"><label for="chat-draft" id="draft-label">Ask anything</label><span id="draft-count">0 / 4,000</span></div>
-                <textarea id="chat-draft" name="message" rows="3" maxlength="4000" placeholder="What’s on your mind?" aria-describedby="mode-helper composer-hint" enterkeyhint="enter"></textarea>
-                <div class="composer-helper"><p id="mode-helper">A question, a second opinion, or just a conversation.</p><button type="button" id="use-example">Use an example <span aria-hidden="true">↗</span></button></div>
-                <div class="composer-bottom"><p id="composer-hint">Enter to send · Shift + Enter for a new line</p><button type="submit" class="button button-primary" id="send-message" disabled>Send <span aria-hidden="true">↑</span></button></div>
-              </form>
             </div>
+            <p class="visually-hidden" id="composer-hint">Enter to send. Shift + Enter for a new line. Only the selected AI receives this conversation.</p>
+          </form>
+          <div class="quick-actions" role="group" aria-label="What would you like to do?">
+            <button type="button" data-mode="write" aria-pressed="false">Write</button>
+            <button type="button" data-mode="summarize" aria-pressed="false">Summarise</button>
+            <button type="button" data-mode="plan" aria-pressed="false">Plan</button>
+            <details class="shortcuts" id="more-shortcuts" data-popover data-escape-close>
+              <summary><span id="more-label">More</span><span aria-hidden="true">⌄</span></summary>
+              <div class="shortcut-menu">
+                <div class="extra-modes">
+                  <button type="button" data-mode="chat" aria-pressed="true">Ask</button>
+                  <button type="button" data-mode="translate" aria-pressed="false">Translate</button>
+                  <button type="button" data-mode="explain" aria-pressed="false">Explain</button>
+                </div>
+                <p id="mode-helper">A question, a second opinion, or just a conversation.</p>
+                <button type="button" id="use-example">Use an example <span aria-hidden="true">↗</span></button>
+              </div>
+            </details>
           </div>
-          <dl class="assistant-metrics" aria-label="Actual activity this page visit">
-            <div class="model-metric"><dt>Selected model</dt><dd id="metric-model">—</dd><small id="metric-readiness">Checking setup</small></div>
-            <div><dt>Completed replies</dt><dd id="metric-replies">0</dd><small id="metric-reply-note">Across AIs · this visit</small></div>
-            <div><dt>Last response time</dt><dd id="metric-time">—</dd><small>Round trip · not first token</small></div>
-            <div><dt>Reported tokens <span title="Units of text reported by the provider. Missing usage is never counted as zero." aria-label="Provider-reported units of text">ⓘ</span></dt><dd id="metric-tokens">—</dd><small id="metric-token-note">No replies yet</small></div>
-          </dl>
+          <div class="conversation-tools">
+            <details class="activity-disclosure" id="activity" data-escape-close>
+              <summary>Activity <span aria-hidden="true">⌄</span></summary>
+              <div class="activity-sheet">
+                <dl class="assistant-metrics" aria-label="Actual activity this page visit">
+                  <div class="model-metric"><dt>Selected model</dt><dd id="metric-model">—</dd><small id="assistant-readiness">Checking setup</small></div>
+                  <div><dt>Completed replies</dt><dd id="metric-replies">0</dd><small id="metric-reply-note">Across AIs · this visit</small></div>
+                  <div><dt>Last response time</dt><dd id="metric-time">—</dd><small>Round trip · not first token</small></div>
+                  <div><dt>Reported tokens</dt><dd id="metric-tokens">—</dd><small id="metric-token-note">No replies yet</small></div>
+                </dl>
+                <p>Tokens are units of text reported by the provider. Missing usage is never counted as zero.</p>
+                <p class="draft-detail">Draft characters <span id="draft-count">0 / 4,000</span></p>
+              </div>
+            </details>
+            <button type="button" class="new-conversation" id="new-conversation" title="Clear only this AI’s conversation"><span aria-hidden="true">＋</span> New conversation</button>
+          </div>
         </div>
-        <div class="console-footnote"><p>Only the AI you choose receives your conversation, via Mori. Chats aren’t saved by this app. AI can make mistakes.</p><a href="#play" class="text-link">Visit your little world <span aria-hidden="true">↘</span></a></div>
       </section>
+      </div>
 
+      <div class="app-view" data-app-view="device" hidden inert>
       <section class="hardware-story" id="inside" aria-labelledby="inside-title" data-renderer="loading" data-motion="scroll">
         <div class="hardware-studio">
           <div class="hardware-heading">
             <div>
-              <p class="eyebrow lime">02 / The anatomy of a little friend</p>
-              <h2 id="inside-title">A little body. A whole <em>world.</em></h2>
+              <p class="eyebrow lime">M–01 / A design concept</p>
+              <h2 id="inside-title" tabindex="-1" data-view-heading>A little device.<br class="mobile-break"> A lot of <em>possibility.</em></h2>
             </div>
             <p class="hardware-invitation">Soft on the outside. A world within.<br>Scroll to open, explore, and bring it all together.</p>
           </div>
@@ -178,7 +153,7 @@
               <button type="button" data-hardware-view="exploded" aria-pressed="false">Exploded <span aria-hidden="true">↗</span></button>
             </div>
             <label class="hardware-scrub-label" for="hardware-scrub"><span class="visually-hidden">Hardware story progress: open, inspect, close</span><input id="hardware-scrub" type="range" min="0" max="1000" step="1" value="0" aria-valuetext="Assembled, start of the story"><span class="hardware-scrub-steps" aria-hidden="true"><span>Open</span><span>Explore</span><span>Close</span></span></label>
-            <a class="hardware-skip" href="#play">Meet the little soul <span aria-hidden="true">↘</span></a>
+            <a class="hardware-skip" href="#talk">Back to Talk <span aria-hidden="true">↗</span></a>
           </div>
           <div class="hardware-footnote">
             <p><strong>Design concept · proposed internals.</strong> Illustrative geometry, not CAD or a released BOM. Fit, specifications, and battery life are unvalidated.</p>
@@ -186,14 +161,20 @@
           </div>
         </div>
       </section>
+      <details class="device-control-study page-width" id="device-controls" data-escape-close>
+        <summary>Try the three-button idea <span aria-hidden="true">＋</span></summary>
+        <p>Stop. Talk. Switch. The illustrated controls work with your web conversation.</p>
+        <div class="device-mount hero-device" data-device="hero"></div>
+      </details>
+      </div>
 
+      <div class="app-view" data-app-view="world" hidden inert>
       <section class="section page-width playground" id="play" aria-labelledby="play-title">
         <div class="section-heading">
           <div>
-            <p class="eyebrow lime">03 / A little personality, too</p>
-            <h2 id="play-title">Your little <em>world.</em></h2>
+            <h2 id="play-title" tabindex="-1" data-view-heading>Your little <em>world.</em></h2>
           </div>
-          <div class="play-intro"><p class="section-intro">Give Mori a name. Take a tiny break.<br>These little rituals work without an AI connection.</p><p class="eyebrow demo-label">Local companion · authored reactions</p></div>
+          <div class="play-intro"><p class="section-intro">A little company. No AI connection needed.</p><a href="#wins" class="text-link">Your small wins <span aria-hidden="true">↓</span></a></div>
         </div>
         <div class="play-grid">
           <article class="habitat" aria-labelledby="habitat-title">
@@ -268,56 +249,52 @@
 
       <section class="wins-section section page-width" id="wins" aria-labelledby="wins-title">
         <div class="wins-header">
-          <div><p class="eyebrow lime">04 / Proof of the little things</p><h2 id="wins-title">Small wins.<br><em>Worth keeping.</em></h2></div>
+          <div><h2 id="wins-title" tabindex="-1">Small wins.<br><em>Worth keeping.</em></h2></div>
           <div class="win-totals" aria-label="Recent saved progress"><div><strong id="win-total">0</strong><span>saved wins</span></div><div><strong id="minute-total">0</strong><span>saved focus minutes</span></div></div>
         </div>
         <div class="wins-empty" id="wins-empty"><span class="empty-spark" aria-hidden="true">✳</span><div><h3>A little space for your first “I did it.”</h3><p>Finish a focus session and choose to save your win. Nothing is marked done without you.</p></div><a class="text-link" href="#play">Start small <span aria-hidden="true">↗</span></a></div>
         <ol class="wins-list" id="wins-list" aria-label="Recent small wins" hidden></ol>
         <div class="wins-footnote"><p>Your latest 24 wins, only in this browser. Forget a win without losing your bond.</p><button class="text-link muted-link" id="open-reset">Reset my local world <span aria-hidden="true">↗</span></button></div>
       </section>
-
-      <section class="section page-width faq-section" id="faq" aria-labelledby="faq-title">
-        <div><p class="eyebrow lime">A few human questions</p><h2 id="faq-title">Simple by design.<br><em>Open book.</em></h2><p class="section-intro">What works now. What needs connecting.</p></div>
-        <div class="faq-list">
-          <details><summary>Can I buy the little device?<span aria-hidden="true">+</span></summary><p>Not yet. The hardware is a detailed design concept, not a manufactured product. There’s nothing to buy or reserve here. The web console can talk to real models after the owner enables AI access; the little local world works right away.</p></details>
-          <details><summary>Is Mori using AI or listening to me?<span aria-hidden="true">+</span></summary><p>Only when you ask. Send uses the selected provider; Talk starts one turn of browser speech recognition, then sends your words. No microphone starts on page load. Your browser’s speech service may process audio off-device. Read-aloud uses browser speech synthesis. This is simple turn-taking, not ChatGPT’s or Claude’s native realtime voice. Typing works in browsers without voice support.</p></details>
-          <details><summary>Does my ChatGPT or Claude subscription connect?<span aria-hidden="true">+</span></summary><p>No. Mori uses OpenAI, Anthropic, and Google model APIs, with separate API access and billing configured by the owner. App subscriptions and past chats don’t transfer. Open Connections to check setup or unlock access with the owner’s code. No provider keys are entered in this page.</p></details>
-          <details id="privacy"><summary>What does Mori remember?<span aria-hidden="true">+</span></summary><p>AI chats are separate for each provider and held only in this page’s memory, not saved on reload. Sending includes that provider’s conversation through the Mori server, and through Vercel AI Gateway if the owner enables that route. This app does not store server transcripts; providers and Gateway may process or retain data under their own policies. Your companion name, shell, bond, local focus session, and up to 24 wins stay in browser storage, as does your theme. Local focus task text is not sent to AI. New conversation clears only the selected chat; Reset my local world clears companion data, not your theme.</p></details>
-          <details><summary>What can the simple buttons do?<span aria-hidden="true">+</span></summary><p>Ask, write, summarise, plan, translate, and explain text with your chosen model. Examples fill an editable draft; nothing is sent until you choose Send or finish a Talk turn. This first version supports three model providers, not every agent. It doesn’t access your email, calendar, files, or other accounts, and it can’t perform actions in them.</p></details>
-        </div>
-      </section>
-
-      <section class="final-cta" aria-labelledby="cta-title">
-        <div class="cta-spark" aria-hidden="true">✳</div>
-        <p class="eyebrow lime">Big possibilities. Small beginnings.</p>
-        <h2 id="cta-title">Less figuring it out.<br>More <em>talking it through.</em></h2>
-        <a class="button button-primary" href="#talk">Back to your AI <span aria-hidden="true">↗</span></a>
-        <p>Choose a connection. Bring a question. Start there.</p>
-      </section>
+      </div>
     </main>
 
-    <footer class="site-footer page-width">
-      <a class="logo" href="#top" aria-label="Mori home"><span class="logo-mark" aria-hidden="true"></span>mori</a>
-      <p>YOUR AI. WITHIN REACH. <span>© 2026 MORI</span></p>
-      <a class="text-link" href="#top">Back to the surface <span aria-hidden="true">↑</span></a>
+    <footer class="app-footer">
+      <span>A little space to think.</span>
+      <button type="button" data-connections>Help & privacy <span aria-hidden="true">↗</span></button>
     </footer>
 
     <dialog id="connections-dialog" aria-labelledby="connections-title" aria-describedby="connections-summary">
-      <button class="dialog-close icon-button" type="button" aria-label="Close connections" data-close-dialog autofocus>×</button>
-      <p class="eyebrow lime">Your AI connections</p>
-      <h2 id="connections-title">A little<br><em>connection.</em></h2>
+      <button class="dialog-close icon-button" type="button" aria-label="Close settings" data-close-dialog autofocus>×</button>
+      <h2 id="connections-title">Mori <em>settings.</em></h2>
       <p id="connections-summary">Checking this Mori’s AI setup…</p>
-      <ul class="connection-list" id="connection-list" aria-label="Provider readiness"></ul>
-      <div class="connection-owner" id="connection-owner" hidden><p id="connection-owner-note">The owner needs to enable AI access and add a provider on the server. There’s no key to paste here.</p><details><summary>Setting up your own Mori?</summary><p>Follow <code>docs/AI_CONNECTIONS.md</code> in the project. Set an owner access code, then explicitly enable an eligible Gateway route on your linked Vercel project or add a direct provider key. Refresh connections after setup. A configured route still needs a real request to verify it.</p></details></div>
       <form id="unlock-form" hidden>
-        <label for="access-code">Access code from this Mori’s owner</label>
+        <label for="access-code">Your owner access code</label>
         <input id="access-code" type="password" name="code" autocomplete="off" spellcheck="false" maxlength="256" required aria-describedby="unlock-hint unlock-status">
-        <p class="field-hint" id="unlock-hint">This unlocks AI requests, not your ChatGPT or Claude account.</p>
-        <button class="button button-primary" type="submit" id="unlock-submit">Unlock AI <span aria-hidden="true">↗</span></button>
+        <p class="field-hint" id="unlock-hint">Not your ChatGPT or Claude password.</p>
+        <button class="button button-primary" type="submit" id="unlock-submit">Unlock Mori <span aria-hidden="true">↗</span></button>
       </form>
       <p class="connection-status" id="unlock-status" role="status" aria-live="polite"></p>
-      <div class="connection-controls"><button type="button" class="button button-outline" id="refresh-connections">Refresh connections</button><button type="button" class="button button-outline" id="lock-access" hidden>Lock AI access</button><button type="button" class="button button-primary" data-close-dialog>Done</button></div>
-      <details class="connection-privacy"><summary>About access, voice & privacy</summary><p>Mori uses provider APIs, with separate access and billing. ChatGPT, Claude, and Gemini app subscriptions and chat history don’t automatically connect. This version does not connect other accounts or tools.</p><p>Prompts and the selected AI’s history go through the Mori server to that provider, via Vercel AI Gateway when the owner enables that route. Chats are held in page memory, not saved by this app; providers and Gateway may process or retain data under their policies. Access uses a server-set HttpOnly session cookie. The code isn’t stored in browser storage.</p><p>Talk starts only when you press it. Browser speech recognition may send audio to the browser’s service; read-aloud uses browser speech synthesis. This is turn-by-turn dictation and playback, not native realtime voice. Stop ends listening, playback, and waiting here, but an in-flight request may already have reached the provider.</p></details>
+      <fieldset class="voice-settings">
+        <legend>Voice</legend>
+        <label class="speak-toggle"><span>Read replies aloud</span><input type="checkbox" id="speak-replies" checked></label>
+        <p id="speech-support"></p>
+      </fieldset>
+      <details class="settings-detail" id="connection-details">
+        <summary>AI connections <span aria-hidden="true">⌄</span></summary>
+        <p>“Ready to try” means configured, not yet verified. “Replied this visit” means this AI has answered here.</p>
+        <ul class="connection-list" id="connection-list" aria-label="Provider readiness"></ul>
+        <div class="connection-owner" id="connection-owner" hidden><p id="connection-owner-note">The owner needs to enable AI access and add a provider on the server. There’s no key to paste here.</p><details><summary>Setting up your own Mori?</summary><p>Follow <code>docs/AI_CONNECTIONS.md</code> in the project. Set an owner access code, then explicitly enable an eligible Gateway route on your linked Vercel project or add a direct provider key. A configured route still needs a real request to verify it.</p></details></div>
+        <button type="button" class="button button-outline" id="refresh-connections">Refresh connections</button>
+      </details>
+      <details class="settings-detail connection-privacy" id="privacy">
+        <summary>Privacy & how it works <span aria-hidden="true">⌄</span></summary>
+        <p>Talk listens once, adds your words to the draft, then sends when you finish. No microphone starts on load. Your browser’s speech service may process audio off-device; read-aloud uses browser speech synthesis. This is turn-taking, not native realtime voice. Typing is always an alternative.</p>
+        <p>Only the selected AI’s chat goes through Mori to that provider, via Vercel AI Gateway when enabled. Chats stay in page memory and aren’t saved by this app. Providers and Gateway may retain data under their policies. AI can make mistakes.</p>
+        <p>Provider APIs have separate access and billing. ChatGPT, Claude, and Gemini app subscriptions and history don’t transfer. No provider keys go in this page. Your owner code uses an HttpOnly session cookie, not browser storage. Stop cancels waiting here; a request may already have reached the provider.</p>
+        <p>Your companion, focus tasks, wins, and theme stay in browser storage. New conversation clears only the selected chat. Mori has no email, calendar, or account tools. The device is a design concept, not a product for sale.</p>
+      </details>
+      <div class="connection-controls"><button type="button" class="button button-outline" id="lock-access" hidden>Lock Mori</button><button type="button" class="button button-primary" data-close-dialog>Done</button></div>
     </dialog>
 
     <dialog id="adoption-dialog" aria-labelledby="adoption-title" aria-describedby="adoption-description">

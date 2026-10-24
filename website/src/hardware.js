@@ -23,7 +23,8 @@ export function initHardware(reducedMotion) {
   const listen = (target, event, handler) => target.addEventListener(event, handler, { signal: abort.signal });
   let selected = hardwareParts[0].id;
   let progress = 0, isolated = false, isolatedAt = 0;
-  let model, gsap, ScrollTrigger, timeline, trigger, loadPromise;
+  let model, gsap, ScrollTrigger, timeline, trigger, loadPromise, createScene;
+  let active = true, sceneAttempted = false;
   let visible = false, frame = null, resize = true, destroyed = false, importFailed = false;
   let shell = document.body.dataset.shell;
   let theme = document.documentElement.dataset.theme;
@@ -98,7 +99,7 @@ export function initHardware(reducedMotion) {
   }
   function render() {
     frame = null;
-    if (destroyed || !visible || document.hidden) return;
+    if (destroyed || !active || !visible || document.hidden) return;
     let positions;
     if (model) {
       if (resize) model.resize();
@@ -129,7 +130,7 @@ export function initHardware(reducedMotion) {
     }
   }
   function schedule() {
-    if (visible && !document.hidden && frame === null && !destroyed) frame = requestAnimationFrame(render);
+    if (active && visible && !document.hidden && frame === null && !destroyed) frame = requestAnimationFrame(render);
   }
   function updateMode() {
     section.dataset.motion = reducedMotion.matches ? 'reduced' : compact.matches ? 'compact' : importFailed ? 'static' : 'scroll';
@@ -139,12 +140,14 @@ export function initHardware(reducedMotion) {
         : importFailed ? 'Illustrated study · all components are still inspectable.'
           : 'Keep scrolling. It all comes back together.';
   }
-  function configureTimeline() {
+  function configureTimeline(preserveProgress = false) {
     trigger?.kill(); trigger = null;
     timeline?.kill(); timeline = null;
+    section.dataset.triggerCount = '0';
     updateMode();
+    if (!active) return;
     if (!gsap) {
-      if (section.dataset.motion !== 'scroll') {
+      if (section.dataset.motion !== 'scroll' && !preserveProgress) {
         progress = .5;
         hardwareParts.forEach(({ id }) => { values[id] = 1; });
       }
@@ -179,7 +182,7 @@ export function initHardware(reducedMotion) {
       // Safe refresh waits for native anchor/momentum scrolling to finish.
       ScrollTrigger.refresh(true);
     } else {
-      timeline.progress(.5);
+      timeline.progress(preserveProgress ? progress : .5);
     }
     section.dataset.triggerCount = String(ScrollTrigger.getAll().filter((item) => item.vars.id === 'mori-hardware').length);
     resize = true;
@@ -216,11 +219,24 @@ export function initHardware(reducedMotion) {
     fallback.setShell(shell);
     schedule();
   }
+  function mountScene() {
+    if (!active || destroyed || !createScene || sceneAttempted) return;
+    sceneAttempted = true;
+    try {
+      model = createScene(find('.hardware-canvas'), { onContextLost: useFallback });
+      section.dataset.renderer = 'webgl';
+      find('[data-render-label]').textContent = 'Interactive 3D study';
+      model.setShell(shell);
+      model.setTheme(theme);
+    } catch {
+      useFallback();
+    }
+  }
   async function load() {
-    if (loadPromise || destroyed) return loadPromise;
+    if (loadPromise || destroyed || !active) return loadPromise;
     loadPromise = (async () => {
       try {
-        // The hero never pays the WebGL/animation download cost. Even with a
+        // Talk never pays the WebGL/animation download cost. Even with a
         // failed import, the already-mounted vector study and inspector survive.
         const [sceneModule, animationModule, scrollModule] = await Promise.all([
           import('./hardware-model.js'), import('gsap'), import('gsap/ScrollTrigger'),
@@ -229,17 +245,11 @@ export function initHardware(reducedMotion) {
         gsap = animationModule.gsap;
         ScrollTrigger = scrollModule.ScrollTrigger;
         gsap.registerPlugin(ScrollTrigger);
-        try {
-          await document.fonts.ready;
-          if (destroyed) return;
-          model = sceneModule.createHardwareScene(find('.hardware-canvas'), { onContextLost: useFallback });
-          section.dataset.renderer = 'webgl';
-          find('[data-render-label]').textContent = 'Interactive 3D study';
-          model.setShell(shell);
-          model.setTheme(theme);
-        } catch {
-          useFallback();
-        }
+        await document.fonts.ready;
+        if (destroyed) return;
+        createScene = sceneModule.createHardwareScene;
+        // Imports can finish after the user leaves. Do not create hidden WebGL.
+        mountScene();
         configureTimeline();
       } catch {
         if (destroyed) return;
@@ -280,8 +290,8 @@ export function initHardware(reducedMotion) {
     });
   });
   listen(scrub, 'input', () => { setIsolated(false); seek(Number(scrub.value) / 1000); load(); });
-  listen(reducedMotion, 'change', configureTimeline);
-  listen(compact, 'change', configureTimeline);
+  listen(reducedMotion, 'change', () => configureTimeline());
+  listen(compact, 'change', () => configureTimeline());
   listen(window, 'mori:theme-change', (event) => {
     theme = event.detail.theme;
     model?.setTheme(theme);
@@ -296,35 +306,63 @@ export function initHardware(reducedMotion) {
     schedule();
   });
   shellObserver.observe(document.body, { attributes: true, attributeFilter: ['data-shell'] });
-  const resizeObserver = new ResizeObserver(() => { resize = true; schedule(); });
+  const resizeObserver = new ResizeObserver(() => {
+    resize = true;
+    if (active && trigger) ScrollTrigger.refresh(true);
+    schedule();
+  });
   resizeObserver.observe(viewport);
-  // The live console above the studio can grow (notices, textarea resizing).
-  // Keep absolute scroll landmarks current without interrupting native anchors.
-  const consoleObserver = new ResizeObserver(() => { if (trigger) ScrollTrigger.refresh(true); });
-  const consoleSection = document.querySelector('#talk');
-  if (consoleSection) consoleObserver.observe(consoleSection);
   const visibilityObserver = new IntersectionObserver(([entry]) => {
-    visible = entry.isIntersecting;
+    visible = active && entry.isIntersecting;
     if (visible) schedule();
   });
   visibilityObserver.observe(stage);
   const loadObserver = new IntersectionObserver(([entry]) => {
-    if (entry.isIntersecting) { loadObserver.disconnect(); load(); }
+    if (active && entry.isIntersecting) { loadObserver.disconnect(); void load(); }
   }, { rootMargin: '550px 0px' });
   loadObserver.observe(section);
   updateMode();
   updateDetail();
   configureTimeline();
   fallback.setShell(shell);
+  section.dataset.active = 'true';
+
+  function refresh() {
+    if (!active || destroyed) return;
+    resize = true;
+    const bounds = stage.getBoundingClientRect();
+    visible = bounds.bottom > 0 && bounds.top < window.innerHeight;
+    if (trigger) ScrollTrigger.refresh(true);
+    schedule();
+  }
+
+  function setActive(next) {
+    if (destroyed) return;
+    if (next === active) { refresh(); return; }
+    active = next;
+    section.dataset.active = String(active);
+    if (!active) {
+      visible = false;
+      trigger?.kill(); trigger = null;
+      timeline?.pause();
+      section.dataset.triggerCount = '0';
+      if (frame !== null) cancelAnimationFrame(frame);
+      frame = null;
+      return;
+    }
+    mountScene();
+    configureTimeline(true);
+    refresh();
+  }
 
   function dispose() {
     if (destroyed) return;
     destroyed = true;
     abort.abort();
     if (frame !== null) cancelAnimationFrame(frame);
-    loadObserver.disconnect(); visibilityObserver.disconnect(); resizeObserver.disconnect(); shellObserver.disconnect(); consoleObserver.disconnect();
+    loadObserver.disconnect(); visibilityObserver.disconnect(); resizeObserver.disconnect(); shellObserver.disconnect();
     trigger?.kill(); timeline?.kill(); model?.dispose();
   }
   listen(window, 'pagehide', (event) => { if (!event.persisted) dispose(); });
-  return dispose;
+  return { setActive, refresh, dispose };
 }

@@ -25,7 +25,51 @@ test.afterEach(async ({ page }) => {
   expect(consoleErrors.get(page), 'No browser or console errors').toEqual([]);
 });
 
+async function openWorld(page) {
+  if (await page.locator('body').getAttribute('data-view') !== 'world') {
+    await page.locator('nav [data-view-link="world"]').click();
+  }
+  await expect(page.locator('[data-app-view="world"]')).toBeVisible();
+}
+
+async function openTalk(page) {
+  if (await page.locator('body').getAttribute('data-view') !== 'talk') await page.locator('.logo').click();
+  await expect(page.locator('[data-app-view="talk"]')).toBeVisible();
+}
+
+async function openActivity(page) {
+  await openTalk(page);
+  if (!await page.locator('#activity').evaluate((element) => element.open)) {
+    await page.locator('#activity > summary').click();
+  }
+}
+
+async function openSettings(page) {
+  await page.locator('.settings-button').click();
+  await expect(page.locator('#connections-dialog')).toBeVisible();
+}
+
+async function setReadAloud(page, checked) {
+  await openSettings(page);
+  await page.locator('#speak-replies').setChecked(checked);
+  await page.keyboard.press('Escape');
+}
+
+async function chooseMode(page, mode) {
+  if (!await page.locator(`[data-mode="${mode}"]`).isVisible()) {
+    await page.locator('#more-shortcuts > summary').click();
+  }
+  await page.locator(`[data-mode="${mode}"]`).click();
+}
+
+async function openDeviceControls(page) {
+  await page.locator('nav [data-view-link="device"]').click();
+  const details = page.locator('#device-controls');
+  if (!await details.evaluate((element) => element.open)) await details.locator('summary').click();
+}
+
 async function adoptCompanion(page, name = 'Miso', shell = 'Sage') {
+  await openWorld(page);
   await page.locator('.customize-button').click();
   await page.getByLabel('Your Mori’s name', { exact: true }).fill(name);
   await page.getByRole('radio', { name: shell, exact: true }).check();
@@ -34,6 +78,7 @@ async function adoptCompanion(page, name = 'Miso', shell = 'Sage') {
 }
 
 async function startRealFocus(page, task = 'Write one honest paragraph') {
+  await openWorld(page);
   await page.getByLabel('What’s one thing you’d like to do?').fill(task);
   await page.getByRole('radio', { name: '5 min', exact: true }).check();
   await page.getByRole('button', { name: 'Let’s do one thing' }).click();
@@ -47,7 +92,8 @@ async function freezeClock(page) {
 }
 
 async function enterHardware(page, renderer = 'webgl') {
-  await page.locator('#inside').evaluate((element) => window.scrollTo({ top: element.offsetTop, behavior: 'instant' }));
+  await page.locator('nav [data-view-link="device"]').click();
+  await expect(page.locator('[data-app-view="device"]')).toBeVisible();
   await expect(page.locator('#inside')).toHaveAttribute('data-renderer', renderer, { timeout: 15_000 });
   if (renderer === 'webgl') {
     await expect.poll(() => page.locator('.hardware-canvas canvas').getAttribute('data-draw-calls')).toMatch(/^[1-9]\d+$/);
@@ -55,6 +101,16 @@ async function enterHardware(page, renderer = 'webgl') {
 }
 
 async function scrollHardware(page, progress) {
+  // Safe ScrollTrigger refreshes land asynchronously after view/layout changes,
+  // so scroll only once the measured range has stopped moving.
+  let previous, stable = 0;
+  await expect.poll(async () => {
+    const signature = await page.locator('#inside').evaluate((element) =>
+      `${element.dataset.scrollStart}|${element.dataset.scrollEnd}`);
+    stable = signature === previous ? stable + 1 : 0;
+    previous = signature;
+    return stable;
+  }, { intervals: [100], timeout: 10_000 }).toBeGreaterThanOrEqual(3);
   await page.locator('#inside').evaluate((element, target) => {
     const start = Number(element.dataset.scrollStart), end = Number(element.dataset.scrollEnd);
     window.scrollTo({ top: start + (end - start) * target, behavior: 'instant' });
@@ -79,7 +135,7 @@ async function expectAnchorSettled(page, selector) {
     message: `${selector} settles at its anchor, allowing the page's scroll padding`,
     timeout: 10_000,
     intervals: [100],
-  }).toBeLessThanOrEqual(64);
+  }).toBeLessThanOrEqual(70);
 }
 
 async function captureScene(page) {
@@ -198,6 +254,7 @@ async function mockAI(page, { authenticated = true, authConfigured = true, confi
 }
 
 async function sendDraft(page, text) {
+  await openTalk(page);
   await page.locator('#chat-draft').fill(text);
   await page.locator('#send-message').click();
   await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'idle');
@@ -321,6 +378,7 @@ test('names and tasks are text, whitespace is rejected, and dialogs and radios w
   await expect(page.locator('.skip-link')).toHaveCSS('opacity', '1');
   await page.keyboard.press('Enter');
   await expect(page.locator('#main')).toBeFocused();
+  await openWorld(page);
   const trigger = page.locator('.customize-button');
   await trigger.focus();
   await page.keyboard.press('Enter');
@@ -353,11 +411,13 @@ test('names and tasks are text, whitespace is rejected, and dialogs and radios w
   await expect(page.locator('#wins-list img, #session-task img')).toHaveCount(0);
   await page.reload();
   await expect(page.locator('#habitat-title')).toHaveText('<img src=x>’s little corner');
-  const question = page.getByText('Is Mori using AI or listening to me?', { exact: false }).locator('..');
-  await page.locator('#faq details').nth(1).locator('summary').focus();
+  await openSettings(page);
+  await page.locator('#privacy summary').focus();
   await page.keyboard.press('Enter');
-  await expect(page.locator('#faq details').nth(1)).toHaveAttribute('open');
-  await expect(question).toBeVisible();
+  await expect(page.locator('#privacy')).toHaveAttribute('open');
+  await expect(page.locator('#privacy')).toContainText('No microphone starts on load');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.settings-button')).toBeFocused();
 });
 
 test('legacy names migrate, corrupt data recovers, and unavailable storage is disclosed', async ({ page, context }) => {
@@ -369,6 +429,7 @@ test('legacy names migrate, corrupt data recovers, and unavailable storage is di
   await page.reload();
   await expect(page.locator('#habitat-title')).toHaveText('Mori’s little corner');
   await expect(page.locator('#persistence-text')).toContainText('Unreadable data was repaired');
+  await openWorld(page);
   await page.getByRole('button', { name: 'Feed', exact: true }).click();
   await expect(page.locator('#bond-count')).toHaveText('1 bond point');
 
@@ -390,7 +451,9 @@ test('legacy names migrate, corrupt data recovers, and unavailable storage is di
 
 for (const width of [320, 390, 768, 1440]) {
   test(`layout, local assets, and reduced motion at ${width}px`, async ({ page, baseURL }) => {
-    await page.setViewportSize({ width, height: width > 1000 ? 1000 : 844 });
+    const height = width === 320 ? 568 : width > 1000 ? 900 : 844;
+    await page.setViewportSize({ width, height });
+    await mockAI(page);
     const externalRequests = [];
     page.on('request', (request) => {
       if (!request.url().startsWith('data:') && new URL(request.url()).origin !== new URL(baseURL).origin) externalRequests.push(request.url());
@@ -398,20 +461,31 @@ for (const width of [320, 390, 768, 1440]) {
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
     await expect(page.locator('h1')).toBeVisible();
-    const layout = await page.evaluate(() => ({
-      viewport: window.innerWidth,
-      scrollWidth: document.documentElement.scrollWidth,
-      heroOpacity: getComputedStyle(document.querySelector('.hero-copy')).opacity,
-      heroPosition: document.querySelector('.hero-copy').getBoundingClientRect().bottom,
-      devicePosition: document.querySelector('.hero-art').getBoundingClientRect().top,
-      smooth: getComputedStyle(document.documentElement).scrollBehavior,
-      idle: getComputedStyle(document.querySelector('.creature')).animationName,
-    }));
-    expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewport);
-    expect(layout.heroOpacity).toBe('1');
-    expect(layout.smooth).toBe('auto');
-    expect(layout.idle).toBe('none');
-    if (width <= 900) expect(layout.heroPosition).toBeLessThanOrEqual(layout.devicePosition);
+    for (const colorScheme of ['light', 'dark']) {
+      await page.emulateMedia({ colorScheme });
+      const layout = await page.evaluate(() => ({
+        viewport: window.innerWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        smooth: getComputedStyle(document.documentElement).scrollBehavior,
+        idle: getComputedStyle(document.querySelector('.creature')).animationName,
+        controls: ['#voice-talk', '#chat-draft', '#send-message'].map((selector) => {
+          const rect = document.querySelector(selector).getBoundingClientRect();
+          return { selector, top: rect.top, bottom: rect.bottom };
+        }),
+      }));
+      expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewport);
+      expect(layout.smooth).toBe('auto');
+      expect(layout.idle).toBe('none');
+      layout.controls.forEach(({ selector, top, bottom }) => {
+        expect(top, `${colorScheme}: ${selector} clears the header`).toBeGreaterThanOrEqual(62);
+        expect(bottom, `${colorScheme}: ${selector} fits the first screen`).toBeLessThanOrEqual(height - 12);
+      });
+      await expect(page.locator('#chat-draft')).toHaveCSS('font-size', '16px');
+      await expect(page.locator('[data-app-view][hidden]')).toHaveCount(2);
+      await expect(page.locator('#chat-scroll')).toBeHidden();
+      await expect(page.locator('.activity-sheet')).toBeHidden();
+      await expect(page.locator('canvas')).toHaveCount(0);
+    }
     const smallTargets = await page.locator('button, a, summary, label:has(input[type="radio"])').evaluateAll((elements) => (
       elements.filter((element) => element.getClientRects().length)
         .map((element) => ({
@@ -422,19 +496,20 @@ for (const width of [320, 390, 768, 1440]) {
         .filter((target) => target.width < 43.9 || target.height < 43.9)
     ));
     expect(smallTargets, 'Visible controls have at least 44px targets').toEqual([]);
-    await page.locator('#play').scrollIntoViewIfNeeded();
+    await openWorld(page);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     await adoptCompanion(page, 'Averylongcompanion123');
     await expect(page.locator('#habitat-title')).toContainText('Averylongcompanion12');
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     await page.getByRole('button', { name: 'Reset my local world' }).click();
     await page.getByRole('button', { name: 'Yes, reset this Mori', exact: true }).click();
+    await openTalk(page);
     await page.reload();
     await page.evaluate(() => document.fonts.ready);
     await page.evaluate(() => window.scrollTo(0, 0));
     if (process.env.MORI_SCREENSHOTS && [390, 1440].includes(width)) {
       await page.screenshot({
-        path: `/tmp/mori-voice-review/mori-${width === 1440 ? 'desktop' : 'mobile'}.png`,
+        path: `/tmp/mori-simple-review/mori-${width === 1440 ? 'desktop' : 'mobile'}.png`,
         fullPage: true,
         animations: 'disabled',
       });
@@ -450,8 +525,7 @@ test.describe('first-load navigation', () => {
   // genuine browser navigation begins. Do not use enterHardware() here.
   test('fresh mobile /#inside reaches and renders the studio', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    // The setup notice above the anchor arrives asynchronously. It must not
-    // displace the initial hash navigation while the 3D engine also loads.
+    // Late setup must not displace the view while its 3D engine loads.
     await page.route('**/api/config', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 350));
       await route.continue();
@@ -471,7 +545,7 @@ test.describe('first-load navigation', () => {
     await expect(page.locator('#inside')).toHaveAttribute('data-renderer', 'loading');
     await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'smooth');
     await page.getByRole('navigation', { name: 'Main navigation' })
-      .getByRole('link', { name: 'The little device', exact: true }).click();
+      .getByRole('link', { name: 'Device', exact: true }).click();
     await expect(page.locator('#inside')).toHaveAttribute('data-renderer', 'webgl', { timeout: 15_000 });
     await expect(page.locator('#inside')).toHaveAttribute('data-trigger-count', '1');
     await expectAnchorSettled(page, '#inside');
@@ -479,34 +553,84 @@ test.describe('first-load navigation', () => {
     await expect(page.locator('.hardware-canvas canvas')).toHaveAttribute('data-draw-calls', /^[1-9]\d*$/);
   });
 
-  test('first mobile little-world link passes the unloaded studio without stopping early', async ({ page }) => {
+  test('first mobile world link never loads the hidden studio or leaves it in the tab order', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
+    const heavyRequests = [];
+    page.on('request', (request) => {
+      if (/hardware-model|ScrollTrigger|gsap/.test(request.url())) heavyRequests.push(request.url());
+    });
     await page.goto('/');
     await expect(page.locator('#inside')).toHaveAttribute('data-renderer', 'loading');
     await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'smooth');
-    await page.getByRole('link', { name: 'Visit your little world', exact: true }).click();
-    await expect(page.locator('#inside')).toHaveAttribute('data-renderer', 'webgl', { timeout: 15_000 });
-    await expect(page.locator('#inside')).toHaveAttribute('data-trigger-count', '1');
+    await openWorld(page);
     await expectAnchorSettled(page, '#play');
     await expect(page.locator('#play-title')).toBeInViewport();
+    await expect(page.locator('#play-title')).toBeFocused();
+    await expect(page.locator('[data-app-view="device"]')).toHaveAttribute('hidden');
+    expect(await page.locator('[data-app-view="device"]').evaluate((element) => element.inert && element.offsetHeight === 0)).toBe(true);
+    for (let i = 0; i < 12; i++) {
+      await page.keyboard.press('Tab');
+      expect(await page.evaluate(() => Boolean(document.activeElement.closest('[hidden], [inert]')))).toBe(false);
+    }
+    expect(heavyRequests).toEqual([]);
+    await expect(page.locator('.hardware-canvas canvas')).toHaveCount(0);
   });
 
-  test('resizing the live console keeps the lazy studio’s absolute scroll landmarks correct', async ({ page }) => {
+  test('leaving Device kills its trigger and rendering; resizing Talk and returning creates exactly one fresh trigger', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto('/');
     await enterHardware(page);
-    const before = Number(await page.locator('#inside').getAttribute('data-scroll-start'));
-    await page.locator('#chat-draft').evaluate((element) => { element.style.height = '300px'; });
-    await expect.poll(async () => Number(await page.locator('#inside').getAttribute('data-scroll-start'))).toBeGreaterThan(before + 100);
-    await expect.poll(() => page.locator('#inside').evaluate((element) => Math.abs(Number(element.dataset.scrollStart) - element.offsetTop))).toBeLessThan(2);
-    await enterHardware(page);
     await scrollHardware(page, .50);
-    await expect(page.locator('#inside')).toHaveAttribute('data-phase', 'exploded');
-    await expect(page.locator('#inside')).toHaveAttribute('data-trigger-count', '1');
+    await page.locator('[data-part="battery"]').click();
+    const canvas = page.locator('.hardware-canvas canvas');
+    await openTalk(page);
+    await expect(page.locator('#inside')).toHaveAttribute('data-trigger-count', '0');
+    await expect(page.locator('#inside')).toHaveAttribute('data-active', 'false');
+    const frames = await canvas.getAttribute('data-render-count');
+    await page.locator('#chat-draft').evaluate((element) => { element.style.height = '300px'; });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.waitForTimeout(250);
+    await expect(canvas).toHaveAttribute('data-render-count', frames);
+    for (let visit = 0; visit < 2; visit++) {
+      await enterHardware(page);
+      await expect.poll(() => page.locator('#inside').evaluate((element) => Math.abs(Number(element.dataset.scrollStart) - element.offsetTop))).toBeLessThan(2);
+      await scrollHardware(page, .50);
+      await expect(page.locator('#inside')).toHaveAttribute('data-phase', 'exploded');
+      await expect(page.locator('#inside')).toHaveAttribute('data-trigger-count', '1');
+      await expect(canvas).toHaveAttribute('data-selected', 'battery');
+      await expect(page.locator('.hardware-part-index button')).toHaveCount(16);
+      await openTalk(page);
+    }
+    await expect(page.locator('#inside')).toHaveAttribute('data-trigger-count', '0');
+  });
+
+  test('deep wins, reload, aliases and back/forward select a single view without delayed scroll correction', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/#wins');
+    await expect(page.locator('body')).toHaveAttribute('data-view', 'world');
+    await expect(page.locator('#wins-title')).toBeInViewport();
+    await page.reload();
+    await expect(page.locator('#wins-title')).toBeInViewport();
+    await openTalk(page);
+    await expect(page.locator('#talk-title')).toBeFocused();
+    await page.locator('#chat-draft').fill('Keep this while I wander.');
+    await openWorld(page);
+    await page.goBack();
+    await expect(page.locator('body')).toHaveAttribute('data-view', 'talk');
+    await expect(page.locator('#chat-draft')).toHaveValue('Keep this while I wander.');
+    await page.goBack();
+    await expect(page.locator('#wins-title')).toBeInViewport();
+    await page.goForward();
+    await expect(page.locator('body')).toHaveAttribute('data-view', 'talk');
+    await page.goto('/#top');
+    await expect(page.locator('#voice-talk')).toBeInViewport();
+    await page.goto('/#not-a-view');
+    await expect(page.locator('body')).toHaveAttribute('data-view', 'talk');
+    await expect(page.locator('#voice-talk')).toBeInViewport();
   });
 });
 
-test('normal-motion reactions clear; real 3D opens, rests, closes down-scroll, and reverses without changing the hero', async ({ page }) => {
+test('normal-motion reactions clear; real 3D opens, rests, closes and reverses independently of Talk', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   const heavyRequests = [];
@@ -514,7 +638,8 @@ test('normal-motion reactions clear; real 3D opens, rests, closes down-scroll, a
     if (/hardware-model|ScrollTrigger|gsap/.test(request.url())) heavyRequests.push(request.url());
   });
   await page.goto('/');
-  expect(heavyRequests, 'The initial hero does not import the 3D/scroll engine').toEqual([]);
+  expect(heavyRequests, 'Talk does not import the 3D/scroll engine').toEqual([]);
+  await openWorld(page);
   await page.getByRole('button', { name: 'Feed', exact: true }).click();
   await page.getByRole('button', { name: 'Pet', exact: true }).click();
   await page.getByRole('button', { name: 'Play', exact: true }).click();
@@ -551,9 +676,8 @@ test('normal-motion reactions clear; real 3D opens, rests, closes down-scroll, a
   await expect(canvas).toHaveAttribute('data-pose', openPose);
   await scrollHardware(page, .02);
   await expect(canvas).toHaveAttribute('data-pose', closedPose);
-  await expect(page.locator('.hero-copy')).toHaveCSS('opacity', '1');
   await page.locator('.hardware-skip').click();
-  await expect(page.locator('#habitat-title')).toBeInViewport();
+  await expect(page.locator('#talk-title')).toBeInViewport();
   // Rendering is demand-driven and stops once the studio has left the viewport.
   await page.waitForTimeout(250);
   const frames = await canvas.getAttribute('data-render-count');
@@ -664,6 +788,7 @@ test('light and dark persist independently of companion reset, and update the re
   await enterHardware(page);
   await expect(page.locator('canvas')).toHaveAttribute('data-shell', 'lavender');
   await expect(page.locator('canvas')).toHaveAttribute('data-theme', 'light');
+  await openWorld(page);
   await page.getByRole('button', { name: 'Reset my local world' }).click();
   await page.getByRole('button', { name: 'Yes, reset this Mori', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
@@ -694,6 +819,7 @@ test('theme follows the system until chosen and remains usable when storage is b
   await expect(page.locator('#persistence-text')).toContainText('Changes last only in this tab');
   await page.getByRole('button', { name: 'Switch to light mode' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await openWorld(page);
   await page.getByRole('button', { name: 'Feed', exact: true }).click();
   await expect(page.locator('#bond-count')).toHaveText('1 bond point');
   await page.reload();
@@ -727,6 +853,7 @@ test('unsupported WebGL uses detailed local vector parts with the same working i
   await page.getByRole('button', { name: 'See all parts' }).click();
   await expect(svg).toHaveAttribute('viewBox', '0 0 920 620');
   await page.locator('.hardware-skip').click();
+  await openWorld(page);
   await page.getByRole('button', { name: 'Pet', exact: true }).click();
   await expect(page.locator('#pet-message')).toContainText('favorite kind of weather');
 });
@@ -756,6 +883,7 @@ test('a failed lazy import leaves an inspectable static study and the companion 
   await expect(page.locator('#inside')).toHaveAttribute('data-phase', 'exploded');
   await page.locator('[data-part="power"]').click();
   await expect(page.locator('[data-part-title]')).toHaveText('USB-C & power');
+  await openWorld(page);
   await page.getByRole('button', { name: 'Feed', exact: true }).click();
   await expect(page.locator('#pet-message')).toContainText('crunch crunch');
 });
@@ -805,11 +933,47 @@ for (const width of [320, 390, 768]) {
     const targets = await page.locator('.hardware-part-nav button, .hardware-part-nav select, .hardware-view-controls button').evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().height));
     targets.forEach((height) => expect(height).toBeGreaterThanOrEqual(44));
     await page.locator('.hardware-skip').click();
-    await expect(page.locator('#habitat-title')).toBeInViewport();
+    await expect(page.locator('#talk-title')).toBeInViewport();
   });
 }
 
 test.describe('AI console · mocked API contracts and browser speech', () => {
+  test('home keeps details out of the way; shortcuts, Activity and Settings work by keyboard with focus return', async ({ page }) => {
+    const mock = await mockAI(page);
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.goto('/');
+    await expect(page.locator('[data-app-view]:visible')).toHaveCount(1);
+    await expect(page.locator('#metric-model')).toBeHidden();
+    await expect(page.locator('#speak-replies')).toBeHidden();
+    expect(await page.locator('[data-app-view][hidden]').evaluateAll((views) => views.every((view) => view.inert && view.offsetHeight === 0))).toBe(true);
+    const more = page.locator('#more-shortcuts > summary');
+    await more.focus();
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Tab');
+    await expect(page.locator('[data-mode="chat"]')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(more).toBeFocused();
+    await expect(page.locator('#more-shortcuts')).not.toHaveAttribute('open');
+    await openActivity(page);
+    await expect(page.locator('#metric-model')).toBeVisible();
+    await expect(page.locator('#metric-model')).toHaveText(mockModels.openai);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#activity > summary')).toBeFocused();
+    await expect(page.locator('#metric-model')).toBeHidden();
+    await openSettings(page);
+    await expect(page.locator('#speak-replies')).toBeVisible();
+    await expect(page.locator('#privacy > p').first()).toBeHidden();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.settings-button')).toBeFocused();
+    expect(mock.requests).toEqual([]);
+    expect(await page.evaluate(() => window.__speech.starts)).toBe(0);
+    await page.locator('.logo').focus();
+    for (let i = 0; i < 18; i++) {
+      await page.keyboard.press('Tab');
+      expect(await page.evaluate(() => Boolean(document.activeElement.closest('[hidden], [inert]')))).toBe(false);
+    }
+  });
+
   test('missing keys are truthful; physical Talk/Stop/Switch do not invent a connection or touch companion state', async ({ page }) => {
     const mock = await mockAI(page, { authenticated: false, authConfigured: false, configured: [] });
     await page.goto('/');
@@ -819,6 +983,9 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
     await expect(page.locator('#metric-time')).toHaveText('—');
     await expect(page.locator('#metric-tokens')).toHaveText('—');
     await expect(page.locator('.chat-message')).toHaveCount(0);
+    await openActivity(page);
+    await expect(page.locator('#metric-model')).toBeVisible();
+    await openDeviceControls(page);
     await page.getByRole('button', { name: 'Switch agent', exact: true }).click();
     await expect(page.locator('[data-screen-agent]')).toHaveText('CLAUDE');
     await expect(page.locator('[data-provider="claude"]')).toHaveAttribute('aria-pressed', 'true');
@@ -829,7 +996,9 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
     await expect(page.locator('#unlock-form')).not.toBeVisible();
     expect(await page.evaluate(() => window.__speech.starts)).toBe(0);
     await page.keyboard.press('Escape');
-    await expect(page.getByRole('button', { name: 'Talk to your AI', exact: true })).toBeFocused();
+    await expect(page.locator('#voice-talk')).toBeFocused();
+    await expect(page.locator('body')).toHaveAttribute('data-view', 'talk');
+    await openDeviceControls(page);
     await page.getByRole('button', { name: 'Stop or go back', exact: true }).click();
     await expect(page.locator('[data-screen-phase]')).toHaveText('STOPPED');
     await adoptCompanion(page, 'Pip', 'Cream');
@@ -837,6 +1006,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
     await expect(page.locator('#bond-count')).toHaveText('1 bond point');
     await expect(page.locator('[data-screen-agent]')).toHaveText('CLAUDE');
     await expect(page.locator('[data-screen-phase]')).toHaveText('STOPPED');
+    await openTalk(page);
     await page.locator('#chat-draft').fill('Please do not send this without setup.');
     await page.locator('#send-message').click();
     await expect(page.locator('#connections-dialog')).toBeVisible();
@@ -871,6 +1041,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
     const mock = await mockAI(page, { authenticated: false });
     await page.goto('/#talk');
     await expect(page.locator('#assistant-readiness')).toHaveText('Locked');
+    await expect(page.locator('#assistant-setup')).toHaveText('Unlock Mori↗');
     await page.locator('#voice-talk').click();
     await expect(page.locator('#access-code')).toBeFocused();
     await page.locator('#access-code').fill('wrong-test-code');
@@ -907,7 +1078,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
     mock.onChat = null;
     await page.locator('#send-message').click();
     await expect(page.locator('#metric-replies')).toHaveText('1');
-    await page.locator('.assistant-toolbar [data-connections]').click();
+    await openSettings(page);
     await page.locator('#lock-access').click();
     await expect(page.locator('#unlock-status')).toContainText('AI access is locked');
     await expect(page.locator('#assistant-readiness')).toHaveText('Locked');
@@ -923,9 +1094,10 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
     await expect(page.locator('#assistant-readiness')).toHaveText('Ready to try');
     const modes = ['write', 'summarize', 'plan', 'translate', 'explain', 'chat'];
     for (const [index, mode] of modes.entries()) {
-      await page.locator(`[data-mode="${mode}"]`).click();
+      await chooseMode(page, mode);
       await expect(page.locator(`[data-mode="${mode}"]`)).toHaveAttribute('aria-pressed', 'true');
       await expect(page.locator('#mode-helper')).not.toBeEmpty();
+      await page.locator('#more-shortcuts > summary').click();
       await page.locator('#use-example').click();
       expect((await page.locator('#chat-draft').inputValue()).length).toBeGreaterThan(20);
       expect(mock.requests).toHaveLength(index);
@@ -935,7 +1107,9 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
       expect(mock.requests[index].messages.at(-1)).toEqual({ role: 'user', content: `My own ${mode} request` });
     }
     await expect(page.locator('#metric-replies')).toHaveText('6');
+    await openActivity(page);
     await expect(page.locator('#metric-model')).toHaveText(mockModels.openai);
+    await expect(page.locator('#metric-model')).toBeVisible();
   });
 
   test('provider histories stay separate; new conversation clears only its chat; reload forgets chats, not the local world', async ({ page }) => {
@@ -977,6 +1151,67 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   });
 
+  test('leaving Talk stops playback, listening and pending replies while preserving each AI’s draft, mode and history', async ({ page }) => {
+    const mock = await mockAI(page, { speech: { autoEnd: false } });
+    await page.goto('/');
+    await page.locator('#chat-draft').fill('OpenAI conversation to keep');
+    await page.locator('#send-message').click();
+    await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'speaking');
+    await page.locator('#chat-draft').fill('OpenAI draft to keep');
+    await openWorld(page);
+    expect(await page.evaluate(() => window.__speech.utterance)).toBeNull();
+    await page.evaluate(() => window.__speech.lateSpeechEnd?.());
+    await openTalk(page);
+    await expect(page.locator('#chat-draft')).toHaveValue('OpenAI draft to keep');
+    await expect(page.locator('#chat-transcript')).toContainText('OpenAI conversation to keep');
+    await page.locator('[data-provider="claude"]').click();
+    await chooseMode(page, 'plan');
+    await page.locator('#voice-talk').click();
+    await page.evaluate(() => window.__speech.emit('Claude unfinished draft', false));
+    await openWorld(page);
+    expect(await page.evaluate(() => window.__speech.current)).toBeNull();
+    await page.evaluate(() => {
+      const result = [{ transcript: 'A late hidden transcript' }]; result.isFinal = true;
+      window.__speech.lateResult?.({ results: [result] });
+    });
+    await page.getByRole('button', { name: 'Feed', exact: true }).click();
+    await openTalk(page);
+    await expect(page.locator('[data-provider="claude"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('[data-mode="plan"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#chat-draft')).toHaveValue('Claude unfinished draft');
+    expect(mock.requests).toHaveLength(1);
+    expect(await page.evaluate(() => window.__speech.starts)).toBe(1);
+    await page.locator('[data-provider="openai"]').click();
+    await expect(page.locator('#chat-draft')).toHaveValue('OpenAI draft to keep');
+    await expect(page.locator('.chat-message')).toHaveCount(2);
+    await page.evaluate(() => {
+      const original = window.fetch.bind(window);
+      window.fetch = (url, options) => {
+        if (url !== '/api/chat') return original(url, options);
+        window.__leavingSignal = options.signal;
+        return new Promise((resolve) => { window.__lateViewReply = () => resolve(new Response(JSON.stringify({
+          provider: 'openai', model: 'ignored-late-model', reply: 'Do not show a hidden reply',
+          usage: { totalTokens: 9999 }, partial: false,
+        }), { status: 200 })); });
+      };
+    });
+    await page.locator('#send-message').click();
+    await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'thinking');
+    await openWorld(page);
+    expect(await page.evaluate(() => window.__leavingSignal.aborted)).toBe(true);
+    await openTalk(page);
+    await page.evaluate(() => window.__lateViewReply());
+    await expect(page.locator('#chat-draft')).toHaveValue('OpenAI draft to keep');
+    await expect(page.locator('#chat-transcript')).not.toContainText('hidden reply');
+    await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'stopped');
+    await expect(page.locator('#metric-replies')).toHaveText('1');
+    await expect(page.locator('#metric-tokens')).toHaveText('18');
+    await expect(page.locator('#bond-count')).toHaveText('1 bond point');
+    await page.locator('[data-provider="claude"]').click();
+    await expect(page.locator('#chat-draft')).toHaveValue('Claude unfinished draft');
+    expect(mock.requests).toHaveLength(1);
+  });
+
   test('user and provider HTML remain plain text; time and usage reflect only received replies, including missing and partial usage', async ({ page }) => {
     const mock = await mockAI(page);
     const userText = '<img src=x onerror=alert(1)>\nA second line.';
@@ -989,6 +1224,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
     };
     await page.goto('/#talk');
     await sendDraft(page, userText);
+    await openActivity(page);
     await expect(page.locator('.chat-message.user p')).toHaveText(userText);
     await expect(page.locator('.chat-message.assistant p')).toHaveText(replyText);
     await expect(page.locator('.chat-message.assistant p')).toHaveCSS('white-space', 'pre-wrap');
@@ -1151,7 +1387,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
     await expect(page.locator('#assistant-readiness')).toHaveText('Ready to try');
     expect(await page.evaluate(() => window.__speech.starts)).toBe(0);
     await page.locator('[data-provider="claude"]').click();
-    await page.locator('[data-mode="translate"]').click();
+    await chooseMode(page, 'translate');
     await page.locator('#voice-talk').click();
     await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'listening');
     await expect(page.locator('[data-screen-agent]')).toHaveText('CLAUDE');
@@ -1192,7 +1428,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
     });
     await expect(page.locator('#chat-draft')).toHaveValue('');
     expect(mock.requests).toHaveLength(2);
-    await page.locator('#speak-replies').uncheck();
+    await setReadAloud(page, false);
     await page.locator('#voice-talk').click();
     await page.evaluate(() => window.__speech.emit('A quiet question', true));
     await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'idle');
@@ -1210,6 +1446,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
     await sendDraft(page, 'Typing still works.');
     expect(mock.requests).toHaveLength(1);
     expect(await page.evaluate(() => window.__speech.starts)).toBe(0);
+    await openDeviceControls(page);
     await page.getByRole('button', { name: 'Talk to your AI', exact: true }).click();
     await expect(page.locator('#chat-draft')).toBeFocused();
   });
@@ -1252,7 +1489,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
     });
     await page.goto('/#talk');
     await expect(page.locator('#assistant-readiness')).toHaveText('Ready to try');
-    await page.locator('#speak-replies').uncheck();
+    await setReadAloud(page, false);
     await page.locator('#chat-draft').fill('First line');
     await page.locator('#chat-draft').press('Shift+Enter');
     await page.locator('#chat-draft').pressSequentially('Second line');
@@ -1282,7 +1519,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
       for (const theme of ['light', 'dark']) {
         await page.emulateMedia({ colorScheme: theme });
         await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-        await page.locator('.assistant-toolbar [data-connections]').click();
+        await openSettings(page);
         await expect(page.locator('#unlock-form')).toBeVisible();
         expect(await page.locator('#connections-dialog').evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
         await page.keyboard.press('Escape');
@@ -1294,7 +1531,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
             });
             return rgb[0] * .2126 + rgb[1] * .7152 + rgb[2] * .0722;
           };
-          return ['#assistant-status', '#voice-help', '#draft-count', '#mode-helper', '#chat-draft', '.quick-actions button[aria-pressed="true"]'].map((selector) => {
+          return ['#assistant-status', '#voice-help', '#draft-count', '#mode-helper', '#chat-draft', '.agent-picker button[aria-pressed="true"]'].map((selector) => {
             const element = document.querySelector(selector), style = getComputedStyle(element);
             let background = style.backgroundColor, ancestor = element;
             while (background === 'rgba(0, 0, 0, 0)' && ancestor.parentElement) {

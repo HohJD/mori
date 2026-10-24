@@ -2,12 +2,12 @@ import './assistant.css';
 import { createVoice } from './voice.js';
 
 const PROVIDERS = [
-  { id: 'openai', name: 'OpenAI (GPT)' },
+  { id: 'openai', name: 'OpenAI' },
   { id: 'claude', name: 'Claude' },
   { id: 'gemini', name: 'Gemini' },
 ];
 const MODES = {
-  chat: { label: 'Ask anything', placeholder: 'What’s on your mind?', helper: 'A question, a second opinion, or just a conversation.', example: 'Help me think of three thoughtful, low-cost birthday gifts for a friend who loves cooking.' },
+  chat: { label: 'Ask anything', placeholder: 'Type a message…', helper: 'A question, a second opinion, or just a conversation.', example: 'Help me think of three thoughtful, low-cost birthday gifts for a friend who loves cooking.' },
   write: { label: 'Make a first draft', placeholder: 'What are we writing, and who is it for?', helper: 'Tell your AI the audience, tone, and what you want to say.', example: 'Write a warm, short thank-you note to a friend who helped me move. Keep it casual and specific.' },
   summarize: { label: 'Find the important bits', placeholder: 'Paste the text you’d like summarised…', helper: 'Paste text here and say how short you want the summary.', example: 'Summarise this in one sentence:\nOur community garden meets on Saturdays at 9am. New volunteers are welcome. Bring gloves; tools and water are provided. This week we are planting herbs.' },
   plan: { label: 'Make a simple plan', placeholder: 'What would you like to plan?', helper: 'A goal, your available time, and any constraints are a good start.', example: 'Help me plan a relaxed Sunday with two hours for chores, a walk, and time to cook. Give me a simple checklist.' },
@@ -15,11 +15,11 @@ const MODES = {
   explain: { label: 'Make it make sense', placeholder: 'What would you like explained?', helper: 'Choose a topic and tell your AI how much you already know.', example: 'Explain compound interest to a beginner using a simple example. Avoid jargon and show the steps.' },
 };
 const DEFAULT_LIMITS = { maxMessages: 20, maxMessageChars: 4000, maxTotalChars: 24000 };
-const PHASES = { idle: 'Idle', listening: 'Listening', thinking: 'Waiting for reply', speaking: 'Speaking', stopped: 'Stopped', error: 'Needs a moment' };
+const MODE_NAMES = { chat: 'Ask anything', write: 'Write', summarize: 'Summarise', plan: 'Plan', translate: 'Translate', explain: 'Explain' };
 const number = (value) => new Intl.NumberFormat().format(value);
 const validTokens = (value) => Number.isSafeInteger(value) && value >= 0;
 
-export function initAssistant() {
+export function initAssistant({ showTalk } = {}) {
   const $ = (selector) => document.querySelector(selector);
   const root = $('#assistant-console');
   const draft = $('#chat-draft');
@@ -35,7 +35,7 @@ export function initAssistant() {
   let config = null;
   let configState = 'loading';
   let phase = 'idle';
-  let notice = 'Checking this Mori’s connections…';
+  let notice = 'Checking connections…';
   let retryAvailable = false;
   let activeJob = null;
   let configJob = null;
@@ -43,6 +43,7 @@ export function initAssistant() {
   let dialogTrigger = null;
   let voiceProvider = null;
   let pageHidden = false;
+  let talkActive = true;
   const current = () => conversations[selected];
   const provider = (id = selected) => config?.providers.find((item) => item.id === id)
     || { ...PROVIDERS.find((item) => item.id === id), model: '', configured: false };
@@ -64,19 +65,19 @@ export function initAssistant() {
   }
 
   function restingNotice() {
-    if (!navigator.onLine) return 'You’re offline. Your draft is here; reconnect before sending.';
-    if (configState === 'loading') return 'Checking this Mori’s connections…';
-    if (configState === 'error') return 'AI connections couldn’t be loaded. Open Connections to try again. Your local world still works.';
-    if (!config.auth.configured || !provider().configured) return 'This AI needs owner setup. Open Connections to see what’s needed.';
-    if (config.auth.required && !config.auth.authenticated) return 'Unlock this Mori with the owner’s access code before talking or sending.';
-    if (current().error) return `${providerName()} couldn’t complete its last request. You can retry your draft.`;
-    if (current().replied) return `${providerName()} has replied this visit. Pick up where you left off.`;
-    return `${providerName()} is ready for a first try. Ask a question to check the connection.`;
+    if (!navigator.onLine) return 'You’re offline. Your draft is kept.';
+    if (configState === 'loading') return 'Checking connections…';
+    if (configState === 'error') return 'Couldn’t check AI setup. Try Settings.';
+    if (!config.auth.configured || !provider().configured) return `${providerName()} needs owner setup.`;
+    if (config.auth.required && !config.auth.authenticated) return 'Owner access needed.';
+    if (current().error) return 'No reply yet. You can retry your draft.';
+    if (current().replied) return 'Your turn, whenever you’re ready.';
+    return 'Ready to try. What shall we think through?';
   }
 
   function renderMetrics() {
     $('#metric-model').textContent = current().model || provider().model || '—';
-    $('#metric-readiness').textContent = `${providerName()} · ${readiness()}`;
+    $('#assistant-readiness').textContent = readiness();
     $('#metric-replies').textContent = number(totals.completed);
     $('#metric-reply-note').textContent = totals.partial
       ? `${number(totals.partial)} partial ${totals.partial === 1 ? 'reply' : 'replies'} not counted`
@@ -94,21 +95,17 @@ export function initAssistant() {
     root.dataset.phase = phase;
     root.dataset.selectedProvider = selected;
     const ready = readiness();
-    $('#assistant-readiness').textContent = ready;
-    $('#assistant-readiness').dataset.ready = String(isReady());
-    $('#voice-phase').textContent = PHASES[phase];
-    $('#active-agent-name').textContent = providerName();
-    $('#active-agent-model').textContent = current().model || provider().model || 'Model unavailable until setup is checked';
-    $('#conversation-title').textContent = `A conversation with ${providerName()}`;
     $('#assistant-status').textContent = notice;
     $('#assistant-notice').dataset.error = String(phase === 'error');
     $('#assistant-retry').hidden = !retryAvailable || isBusy();
-    // Keep Connections available while checking, and reserve its initial space.
-    // Otherwise a late config result pushes a fresh /#inside anchor down.
-    $('#assistant-setup').hidden = isReady();
+    $('#assistant-setup').hidden = configState === 'loading' || isReady();
+    $('#setup-label').textContent = configState === 'loaded' && config.auth.configured
+      && config.auth.required && !config.auth.authenticated
+      && config.providers.some((item) => item.configured) ? 'Unlock Mori' : 'Settings';
     $('#assistant-stop').disabled = !isBusy();
+    const returnFromStop = document.activeElement === $('#assistant-stop') && !isBusy();
+    $('#assistant-stop').hidden = !isBusy();
     $('#voice-talk').disabled = !voice.canListen || isBusy();
-    $('#type-instead').disabled = phase === 'thinking';
     // The supported-but-locked Talk/Send controls open Connections, not a mic.
     $('#send-message').disabled = isBusy() || !draft.value.trim();
     draft.readOnly = phase === 'thinking';
@@ -118,7 +115,11 @@ export function initAssistant() {
     $('#draft-count').dataset.over = String(draft.value.length > limits().maxMessageChars);
     const mode = MODES[current().mode];
     $('#draft-label').textContent = mode.label;
+    $('#composer-mode').textContent = MODE_NAMES[current().mode];
     $('#mode-helper').textContent = mode.helper;
+    const extraMode = ['translate', 'explain'].includes(current().mode);
+    $('#more-shortcuts').dataset.active = String(extraMode);
+    $('#more-label').textContent = extraMode ? MODE_NAMES[current().mode] : 'More';
     draft.placeholder = mode.placeholder;
     document.querySelectorAll('button[data-provider]').forEach((button) => {
       button.setAttribute('aria-pressed', String(button.dataset.provider === selected));
@@ -128,6 +129,9 @@ export function initAssistant() {
       button.disabled = phase === 'thinking' || phase === 'listening';
     });
     renderMetrics();
+    if (returnFromStop && talkActive && !pageHidden) {
+      (voice.canListen ? $('#voice-talk') : draft).focus({ preventScroll: true });
+    }
     // An explicit UI boundary; companion state never owns the device screen.
     window.dispatchEvent(new CustomEvent('mori:assistant-state', {
       detail: { provider: providerName(), phase, readiness: ready },
@@ -145,10 +149,8 @@ export function initAssistant() {
     const transcript = $('#chat-transcript');
     const messages = [...current().messages];
     if (activeJob?.provider === selected) messages.push({ role: 'user', content: activeJob.text, pending: true });
-    $('#chat-empty').hidden = messages.length > 0;
-    $('#empty-guidance').textContent = isReady()
-      ? 'Ask your own question, or choose an action and try an example. Nothing sends until you choose.'
-      : 'Once your AI is connected, your questions and its replies will appear here.';
+    $('#chat-scroll').hidden = messages.length === 0;
+    root.dataset.hasConversation = String(messages.length > 0);
     const fragment = document.createDocumentFragment();
     messages.forEach((message) => {
       const entry = document.createElement('article');
@@ -204,25 +206,26 @@ export function initAssistant() {
     $('#unlock-submit').disabled = Boolean(sessionJob);
     $('#lock-access').disabled = Boolean(sessionJob);
     $('#connections-summary').textContent = !navigator.onLine ? 'You’re offline. Reconnect, then refresh connections.'
-      : configState === 'loading' ? 'Checking this Mori’s AI setup…'
-        : configState === 'error' ? 'We couldn’t reach this Mori’s AI service. Refresh to try again; the local companion still works.'
+      : configState === 'loading' ? 'Checking AI setup…'
+        : configState === 'error' ? 'We couldn’t reach the AI service. Refresh connections to try again.'
           : ownerNeeded ? 'This Mori is waiting for its AI connections.'
-            : config.auth.required && !config.auth.authenticated ? 'AI access is locked. Have the owner’s code? You can unlock it here.'
-              : 'Choose a configured AI and try a conversation. Setup alone does not verify a connection.';
+            : config.auth.required && !config.auth.authenticated ? 'Have the owner’s code? Unlock your AI here.'
+              : 'Your space, your preferences. Connection details are below.';
   }
 
   function openConnections() {
     if (dialog.open) return;
     dialogTrigger = document.activeElement;
-    if (isBusy()) stopAll({ message: 'Voice stopped while you check Connections. Your draft is kept.' });
+    if (isBusy()) stopAll({ message: 'Stopped while you check Settings. Your draft is kept.' });
     $('#unlock-status').textContent = '';
     renderConnections();
+    if (!isReady() && $('#unlock-form').hidden) $('#connection-details').open = true;
     dialog.showModal();
     if (!$('#unlock-form').hidden) codeInput.focus();
     else dialog.querySelector('[data-close-dialog]').focus();
   }
 
-  function stopAll({ message = 'Stopped. Your draft is still here.', announce = true } = {}) {
+  function stopAll({ message = 'Stopped. Your draft is kept.', announce = true } = {}) {
     voiceProvider = null;
     voice.cancel();
     const job = activeJob;
@@ -234,7 +237,7 @@ export function initAssistant() {
       if (job.provider === selected) draft.value = job.text;
     }
     if (announce) setPhase('stopped', job
-      ? 'Stopped here. The request may already have reached the provider. Your draft is kept.'
+      ? 'Stopped here. Your draft is kept.'
       : message);
     renderTranscript();
   }
@@ -262,15 +265,15 @@ export function initAssistant() {
     const code = data?.error?.code;
     if (response.status === 401 || code === 'AUTH_REQUIRED') {
       if (config) config.auth.authenticated = false;
-      return 'Your AI access has expired or is locked. Open Connections to unlock, then send your draft again.';
+      return 'AI access has expired or is locked. Unlock Mori, then send again.';
     }
     if (code === 'SETUP_REQUIRED') {
       if (config) config.auth.configured = false;
-      return 'This Mori needs owner setup before it can answer. Open Connections for the next step.';
+      return 'Mori needs owner setup. See Settings for the next step.';
     }
     if (code === 'PROVIDER_NOT_CONFIGURED' || response.status === 503) {
       if (config) provider().configured = false;
-      return 'This AI needs setup by the owner. Open Connections; we won’t switch to another provider for you.';
+      return 'This AI needs owner setup. Your draft is kept; no provider was switched.';
     }
     if (response.status === 429) return 'This Mori or provider is receiving too many requests. Wait a moment, then retry your draft.';
     if (response.status === 403) return 'This request was blocked for this site. Try the owner’s Mori URL, or ask the owner to check access.';
@@ -298,7 +301,7 @@ export function initAssistant() {
   }
 
   async function sendMessage() {
-    if (activeJob || phase === 'listening' || phase === 'speaking' || pageHidden) return;
+    if (activeJob || phase === 'listening' || phase === 'speaking' || pageHidden || !talkActive) return;
     current().draft = draft.value;
     const text = draft.value.trim();
     if (!requireReady()) return;
@@ -318,7 +321,7 @@ export function initAssistant() {
     owner.error = false;
     owner.draft = '';
     draft.value = '';
-    setPhase('thinking', `Asking ${providerName()}. Stop cancels waiting here.`);
+    setPhase('thinking', `Asking ${providerName()}…`);
     renderTranscript();
     job.timer = setTimeout(() => {
       if (activeJob !== job) return;
@@ -335,7 +338,7 @@ export function initAssistant() {
         }),
       });
       const data = await response.json().catch(() => null);
-      if (activeJob !== job || selected !== job.provider || pageHidden) return;
+      if (activeJob !== job || selected !== job.provider || pageHidden || !talkActive) return;
       if (!response.ok) throw new Error(apiError(response, data));
       if (data?.provider !== job.provider || typeof data.reply !== 'string' || !data.reply.trim()
         || typeof data.model !== 'string' || !data.model.trim()) {
@@ -352,13 +355,13 @@ export function initAssistant() {
       totals.duration = Math.max(0, performance.now() - job.started);
       addUsage(data.usage);
       setPhase('idle', data.partial === true
-        ? 'This reply was cut short. You can ask the same AI to continue; nothing is sent automatically.'
-        : `${providerName()} replied. Keep going, or take a little pause.`);
+        ? 'A partial reply. Ask to continue when you’re ready.'
+        : 'Your turn, whenever you’re ready.');
       renderTranscript();
       renderConnections();
       if (speakToggle.checked && voice.canSpeak) voice.speak(data.reply);
     } catch (error) {
-      if (activeJob !== job || selected !== job.provider || pageHidden) return;
+      if (activeJob !== job || selected !== job.provider || pageHidden || !talkActive) return;
       clearTimeout(job.timer);
       activeJob = null;
       owner.draft = text;
@@ -377,31 +380,31 @@ export function initAssistant() {
 
   const voice = createVoice({
     onListening() {
-      if (voiceProvider !== selected) return;
-      setPhase('listening', 'Listening for one turn. Your words will be sent when you finish. Stop to keep editing.');
+      if (voiceProvider !== selected || !talkActive) return;
+      setPhase('listening', 'Listening… finish to send, or Stop to edit.');
     },
     onDraft(text) {
-      if (voiceProvider !== selected) return;
+      if (voiceProvider !== selected || !talkActive) return;
       draft.value = text;
       current().draft = text;
       renderControls();
     },
     onFinal(text) {
-      if (voiceProvider !== selected || pageHidden) return;
+      if (voiceProvider !== selected || pageHidden || !talkActive) return;
       voiceProvider = null;
       draft.value = text;
       current().draft = text;
       setPhase('idle', 'Your words are ready.');
       void sendMessage();
     },
-    onSpeaking() { setPhase('speaking', 'Reading the reply aloud. The microphone is off.'); },
-    onIdle() { setPhase('idle', 'Your turn, whenever you’re ready. The microphone is off.'); },
+    onSpeaking() { setPhase('speaking', 'Reading aloud · microphone off.'); },
+    onIdle() { setPhase('idle', 'Your turn · microphone off.'); },
     onError(message) {
       voiceProvider = null;
       setPhase('error', message);
     },
   });
-  if (!voice.canListen) $('#voice-help').textContent = 'Voice input isn’t supported in this browser. Type your question here, or try a browser with speech recognition.';
+  if (!voice.canListen) $('#voice-help').textContent = 'Voice isn’t supported here. Typing works below.';
   if (!voice.canSpeak) {
     speakToggle.checked = false;
     speakToggle.disabled = true;
@@ -412,7 +415,7 @@ export function initAssistant() {
   ].filter(Boolean).join(' ');
 
   function startTalk() {
-    if (isBusy() || pageHidden) return;
+    if (isBusy() || pageHidden || !talkActive) return;
     if (!requireReady()) return;
     if (!voice.canListen) {
       setPhase('idle', 'This browser doesn’t support voice input. Type your question instead.');
@@ -421,13 +424,12 @@ export function initAssistant() {
     }
     voiceProvider = selected;
     current().draft = draft.value;
-    setPhase('listening', 'Starting the microphone for one turn. Your final words will be sent.');
+    setPhase('listening', 'Starting the microphone… one turn, then send.');
     voice.listen(draft.value);
   }
 
   function focusDraft() {
     draft.focus({ preventScroll: true });
-    draft.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
   }
 
   function switchProvider(id) {
@@ -436,7 +438,7 @@ export function initAssistant() {
     stopAll({ announce: false });
     selected = id;
     draft.value = current().draft;
-    setPhase('idle', `${providerName()} selected. This AI has its own conversation. ${restingNotice()}`);
+    setPhase('idle', restingNotice());
     renderTranscript();
     renderConnections();
   }
@@ -544,19 +546,18 @@ export function initAssistant() {
   document.querySelectorAll('button[data-provider]').forEach((button) => button.addEventListener('click', () => switchProvider(button.dataset.provider)));
   document.querySelectorAll('[data-mode]').forEach((button) => button.addEventListener('click', () => {
     current().mode = button.dataset.mode;
+    $('#more-shortcuts').open = false;
     renderControls();
+    draft.focus({ preventScroll: true });
   }));
   $('#voice-talk').addEventListener('click', startTalk);
-  $('#type-instead').addEventListener('click', () => {
-    if (phase === 'listening' || phase === 'speaking') stopAll({ message: 'Voice stopped. Type your question whenever you’re ready.' });
-    focusDraft();
-  });
   $('#assistant-stop').addEventListener('click', () => stopAll());
   $('#assistant-retry').addEventListener('click', () => { void sendMessage(); });
   $('#use-example').addEventListener('click', () => {
     draft.value = MODES[current().mode].example.slice(0, limits().maxMessageChars);
     current().draft = draft.value;
-    setPhase('idle', 'An example, just in your draft. Edit it to make it yours, then choose Send.');
+    $('#more-shortcuts').open = false;
+    setPhase('idle', 'An example to make yours. Edit, then Send.');
     draft.focus({ preventScroll: true });
   });
   $('#new-conversation').addEventListener('click', () => {
@@ -565,7 +566,7 @@ export function initAssistant() {
     current().draft = '';
     current().mode = 'chat';
     draft.value = '';
-    setPhase('idle', `A fresh conversation with ${providerName()}. Other chats, your companion, and this visit’s metrics are unchanged.`);
+    setPhase('idle', `A fresh conversation with ${providerName()}.`);
     renderTranscript();
     draft.focus({ preventScroll: true });
   });
@@ -595,14 +596,17 @@ export function initAssistant() {
     const pending = sessionJob;
     sessionJob = null;
     pending?.abort();
-    if (dialogTrigger?.isConnected) dialogTrigger.focus({ preventScroll: true });
+    if (dialogTrigger?.isConnected && !dialogTrigger.closest('[hidden], [inert]')) dialogTrigger.focus({ preventScroll: true });
   });
   window.addEventListener('mori:assistant-action', (event) => {
     if (event.detail?.action === 'switch') {
       switchProvider(PROVIDERS[(PROVIDERS.findIndex((item) => item.id === selected) + 1) % PROVIDERS.length].id);
     } else if (event.detail?.action === 'stop') stopAll();
     else if (event.detail?.action === 'talk') {
-      $('#talk').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+      // Keep the original device's Talk a direct gesture, but never record in
+      // its hidden chat view. Navigate synchronously before invoking speech.
+      showTalk?.();
+      $('#voice-talk').focus({ preventScroll: true });
       startTalk();
     }
   });
@@ -612,7 +616,7 @@ export function initAssistant() {
     renderConnections();
   });
   window.addEventListener('online', () => {
-    setPhase('idle', 'You’re online again. Check Connections or send your draft when you’re ready.');
+    setPhase('idle', 'You’re online again. Send when you’re ready.');
     renderConnections();
   });
   window.addEventListener('pagehide', () => {
@@ -634,4 +638,12 @@ export function initAssistant() {
   renderControls();
   renderTranscript();
   void refreshConfig();
+  return {
+    setActive(active) {
+      talkActive = active;
+      if (active) return; // Returning never sends, clears, or restarts voice.
+      current().draft = draft.value;
+      stopAll({ message: 'Stopped while you were away. Your draft is kept.', announce: isBusy() });
+    },
+  };
 }

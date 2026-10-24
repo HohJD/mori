@@ -386,7 +386,6 @@ dialog > p:not(.eyebrow) { margin-bottom: 26px; color: #b8c4ac; font-size: 13px;
 @media (max-width: 900px) {
   .page-width { width: calc(100% - 56px); }
   .site-header { height: 88px; gap: 20px; }
-  .site-header nav a:last-child { display: none; }
   .site-header nav { gap: 18px; margin-right: 0; }
   .header-adopt { padding-inline: 16px; gap: 15px; }
   .hero-grid { grid-template-columns: 1fr; gap: 0; padding-top: 34px; }

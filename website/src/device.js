@@ -28,7 +28,9 @@ function deviceMarkup() {
 }
 
 export function mountDevices() {
-  document.querySelector('[data-device="hero"]').innerHTML = deviceMarkup();
+  const mount = document.querySelector('[data-device="hero"]');
+  if (!mount) return;
+  mount.innerHTML = deviceMarkup();
   document.querySelectorAll('[data-assistant-action]').forEach((button) => {
     button.addEventListener('click', () => window.dispatchEvent(new CustomEvent('mori:assistant-action', {
       detail: { action: button.dataset.assistantAction },

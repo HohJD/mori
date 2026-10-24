@@ -1,6 +1,6 @@
 /*
  * Two palettes, one little world.
- * --lime is the text accent; --accent-fill is a bright lime control surface.
+ * --lime is the text accent; --accent-fill is forest by day, lime by night.
  * --accent-ink (also --on-accent) is text ON that fill, in both themes.
  * Physical shell colors stay on <body>.
  */
@@ -41,9 +41,9 @@
   --surface-strong: #fffef9;
   --surface-soft: #e8eddf;
   --border: #394e3333;
-  --accent-fill: #d7ff74;
-  --accent-fill-hover: #cbef72;
-  --accent-ink: #18210e;
+  --accent-fill: #365c3d;
+  --accent-fill-hover: #294a30;
+  --accent-ink: #f9faf3;
   --on-accent: var(--accent-ink);
   --control-border: #85947b;
   --error: #983f2d;
@@ -54,7 +54,7 @@
   --shadow: 0 18px 50px #34452b0f, 0 2px 8px #34452b06;
 }
 
-/* Bright button fills stay independent of the light palette's forest text accent. */
+/* Text on an accent surface always uses the matching theme's ink. */
 :root[data-theme] {
   accent-color: var(--lime);
 }
