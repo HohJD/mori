@@ -54,6 +54,24 @@ async function scrollHardware(page, progress) {
   await expect.poll(async () => Number(await page.locator('#inside').getAttribute('data-progress'))).toBeCloseTo(progress, 2);
 }
 
+async function expectAnchorSettled(page, selector) {
+  let previousY;
+  let stableSamples = 0;
+  await expect.poll(async () => {
+    const { y, top } = await page.locator(selector).evaluate((element) => ({
+      y: window.scrollY, top: element.getBoundingClientRect().top,
+    }));
+    stableSamples = previousY !== undefined && Math.abs(y - previousY) < 1 ? stableSamples + 1 : 0;
+    previousY = y;
+    // Observe native navigation only: never scroll the target into place here.
+    return stableSamples >= 3 ? Math.abs(top) : Infinity;
+  }, {
+    message: `${selector} settles at its anchor, allowing the page's scroll padding`,
+    timeout: 10_000,
+    intervals: [100],
+  }).toBeLessThanOrEqual(40);
+}
+
 async function captureScene(page) {
   // Let the completed WebGL draw reach the compositor, not merely its DOM data.
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -322,6 +340,48 @@ for (const width of [320, 390, 768, 1440]) {
     expect(externalRequests, 'All fonts and assets are self-hosted').toEqual([]);
   });
 }
+
+test.describe('first-load navigation', () => {
+  test.use({ reducedMotion: 'no-preference' });
+
+  // Each test gets a fresh browser context; the engine is still lazy when
+  // genuine browser navigation begins. Do not use enterHardware() here.
+  test('fresh mobile /#inside reaches and renders the studio', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/#inside');
+    await expect(page.locator('#inside')).toHaveAttribute('data-renderer', 'webgl', { timeout: 15_000 });
+    await expect(page.locator('#inside')).toHaveAttribute('data-trigger-count', '1');
+    await expectAnchorSettled(page, '#inside');
+    await expect(page.locator('#inside-title')).toBeInViewport();
+    await expect(page.locator('.hardware-canvas canvas')).toHaveAttribute('data-draw-calls', /^[1-9]\d*$/);
+  });
+
+  test('first desktop device link reaches and renders the studio', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto('/');
+    await expect(page.locator('#inside')).toHaveAttribute('data-renderer', 'loading');
+    await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'smooth');
+    await page.getByRole('navigation', { name: 'Main navigation' })
+      .getByRole('link', { name: 'The little device', exact: true }).click();
+    await expect(page.locator('#inside')).toHaveAttribute('data-renderer', 'webgl', { timeout: 15_000 });
+    await expect(page.locator('#inside')).toHaveAttribute('data-trigger-count', '1');
+    await expectAnchorSettled(page, '#inside');
+    await expect(page.locator('#inside-title')).toBeInViewport();
+    await expect(page.locator('.hardware-canvas canvas')).toHaveAttribute('data-draw-calls', /^[1-9]\d*$/);
+  });
+
+  test('first mobile playground link passes the unloaded studio without stopping early', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    await expect(page.locator('#inside')).toHaveAttribute('data-renderer', 'loading');
+    await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'smooth');
+    await page.getByRole('link', { name: 'Try the playground', exact: true }).click();
+    await expect(page.locator('#inside')).toHaveAttribute('data-renderer', 'webgl', { timeout: 15_000 });
+    await expect(page.locator('#inside')).toHaveAttribute('data-trigger-count', '1');
+    await expectAnchorSettled(page, '#play');
+    await expect(page.locator('#play-title')).toBeInViewport();
+  });
+});
 
 test('normal-motion reactions clear; real 3D opens, rests, closes down-scroll, and reverses without changing the hero', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });

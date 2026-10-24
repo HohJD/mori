@@ -176,7 +176,8 @@ export function initHardware(reducedMotion) {
           section.dataset.scrollEnd = self.end.toFixed(2);
         },
       });
-      ScrollTrigger.refresh();
+      // Safe refresh waits for native anchor/momentum scrolling to finish.
+      ScrollTrigger.refresh(true);
     } else {
       timeline.progress(.5);
     }
