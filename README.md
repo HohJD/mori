@@ -83,16 +83,29 @@ The 3D studio uses exactly pinned **Three.js 0.186.1** and **GSAP 3.15.0**
 (including ScrollTrigger). Software notices ship in
 `website/public/software-licenses.txt`; GSAP uses its standard no-charge license.
 
+## The landing page
+
+A fresh visit opens the **landing page** (`/` or `#home`): a sticker-book
+introduction to Mori as a desk buddy. The hero pebble is interactive (pat, nap,
+play, and eyes that follow the pointer), followed by moods, a day on your desk,
+the three-button controls, and the **Mori family** product lineup (`#lineup`):
+Pebble ($149), Nest desk dock ($29), Coats bumpers ($15), the optional Mori+ plan
+($8/month), and Mori Web, which is live today. Hardware prices are planned
+targets from the research brief, and the page says the hardware is not on sale.
+Markup lives in `website/index.html`; styles and behaviour in
+`website/src/landing.css` and `website/src/landing.js`. Headlines use the
+self-hosted Fredoka font.
+
 ## A small workspace
 
-- **Talk** is the default view (`/`, `#talk`, or the legacy `#top`). The logo
-  always returns here. Talk, the composer and Send fit the first screen, including
+- **Talk** lives at `#talk` (or the legacy `#top`). The logo returns to the
+  landing page. Talk, the composer and Send fit the first screen, including
   a compact 320×568 window; there is no empty transcript panel before a reply.
 - **Device** (`#inside`) and **Your world** (`#play`, with `#wins` for saved wins)
   are quiet header links, including on mobile. These are same-document hash
   views, not separate pages or a routing framework. Inactive views are natively
   `hidden` and `inert`: no home-page height and no stray keyboard stops.
-- A fresh visit or reload always opens Talk at the top of the page; the URL
+- A fresh visit or reload always opens the landing page at the top; the URL
   hash is stripped and the studio stays unloaded. In-session header links and
   browser back/forward still reveal each destination before scrolling, without
   waiting on fonts or 3D imports. An unknown hash safely shows Talk.
@@ -317,6 +330,8 @@ These write `/tmp/mori-simple-review/mori-desktop.png` and
 
 ```text
 website/index.html          Semantic page, forms, and native dialogs
+website/src/landing.js      Landing page creatures, hero interactions, reveals
+website/src/landing.css     Landing page styles, scoped light/dark tokens
 website/src/main.js         DOM/controller and explicit user actions
 website/src/navigation.js   Hidden hash views, anchors, disclosure focus handling
 website/src/assistant.js    Provider-isolated chat, connection gate, metrics

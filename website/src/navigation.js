@@ -1,6 +1,9 @@
 // Small same-document views. The DOM stays mounted so drafts and local state do.
 const destinations = {
-  '': ['talk', 'talk'],
+  '': ['home', 'home'],
+  '#home': ['home', 'home'],
+  '#moods': ['home', 'moods'],
+  '#lineup': ['home', 'lineup'],
   '#top': ['talk', 'talk'],
   '#talk': ['talk', 'talk'],
   '#main': ['talk', 'talk'],
@@ -41,7 +44,7 @@ export function initNavigation({ beforeChange, onChange, onLayout }) {
     if (id === 'device-controls') target.open = true;
     // Reading the rect flushes the newly visible layout. No font/import timers
     // can later hijack a user's scroll, and rapid back/forward has no stale job.
-    const top = id === 'talk' ? 0 : target.getBoundingClientRect().top + window.scrollY
+    const top = id === 'talk' || id === 'home' ? 0 : target.getBoundingClientRect().top + window.scrollY
       - document.querySelector('.site-header').getBoundingClientRect().height;
     window.scrollTo({ top: Math.max(0, top), behavior: 'instant' });
     if (focus) {
@@ -79,7 +82,7 @@ export function initNavigation({ beforeChange, onChange, onLayout }) {
   window.addEventListener('pageshow', (event) => {
     if (event.persisted) show(location.hash, { focus: false });
   });
-  // A full load always opens Talk at the top; the hash only steers in-session
+  // A full load always opens the landing page at the top; the hash only steers in-session
   // navigation. Stripping it keeps handledHash honest for the next popstate.
   if (location.hash) history.replaceState(null, '', location.pathname + location.search);
   show('', { focus: false });

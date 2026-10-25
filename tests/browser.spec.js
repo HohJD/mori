@@ -33,8 +33,14 @@ async function openWorld(page) {
 }
 
 async function openTalk(page) {
-  if (await page.locator('body').getAttribute('data-view') !== 'talk') await page.locator('.logo').click();
+  if (await page.locator('body').getAttribute('data-view') !== 'talk') await page.locator('nav [data-view-link="talk"]').click();
   await expect(page.locator('[data-app-view="talk"]')).toBeVisible();
+}
+
+// A fresh load opens the landing page; the console is one header link away.
+async function gotoTalk(page) {
+  await page.goto('/');
+  await openTalk(page);
 }
 
 async function openActivity(page) {
@@ -467,7 +473,23 @@ for (const width of [320, 390, 768, 1440]) {
     });
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
-    await expect(page.locator('h1')).toBeVisible();
+    await expect(page.locator('body')).toHaveAttribute('data-view', 'home');
+    await expect(page.locator('#home-title')).toBeInViewport();
+    const landingTargets = await page.locator('[data-app-view="home"] :is(button, a), .site-header :is(button, a)').evaluateAll((elements) => (
+      elements.filter((element) => element.getClientRects().length)
+        .map((element) => ({ name: element.getAttribute('aria-label') || element.textContent.trim(), width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height }))
+        .filter((target) => target.width < 43.9 || target.height < 43.9)
+    ));
+    expect(landingTargets, 'Landing controls have at least 44px targets').toEqual([]);
+    for (const colorScheme of ['light', 'dark']) {
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      expect(await page.evaluate(() => document.documentElement.scrollWidth), `${colorScheme}: landing never scrolls sideways`).toBeLessThanOrEqual(width);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      if (colorScheme === 'dark') await page.locator('[data-theme-toggle]').click();
+    }
+    await page.locator('[data-theme-toggle]').click();
+    await openTalk(page);
+    await expect(page.locator('h1:visible')).toHaveCount(1);
     for (const colorScheme of ['light', 'dark']) {
       // The first visit is always light, so exercise the dark palette via the toggle.
       if (colorScheme === 'dark') await page.locator('[data-theme-toggle]').click();
@@ -490,7 +512,7 @@ for (const width of [320, 390, 768, 1440]) {
         expect(bottom, `${colorScheme}: ${selector} fits the first screen`).toBeLessThanOrEqual(height - 12);
       });
       await expect(page.locator('#chat-draft')).toHaveCSS('font-size', '16px');
-      await expect(page.locator('[data-app-view][hidden]')).toHaveCount(2);
+      await expect(page.locator('[data-app-view][hidden]')).toHaveCount(3);
       await expect(page.locator('#chat-scroll')).toBeHidden();
       await expect(page.locator('.activity-sheet')).toBeHidden();
       await expect(page.locator('canvas')).toHaveCount(0);
@@ -532,7 +554,7 @@ test.describe('first-load navigation', () => {
 
   // Each test gets a fresh browser context; the engine is still lazy when
   // genuine browser navigation begins. Do not use enterHardware() here.
-  test('fresh mobile /#inside load opens Talk at the top; the device link then renders the studio', async ({ page }) => {
+  test('fresh mobile /#inside load opens the landing page at the top; the device link then renders the studio', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     // Late setup must not displace the view while its 3D engine loads.
     await page.route('**/api/config', async (route) => {
@@ -540,9 +562,9 @@ test.describe('first-load navigation', () => {
       await route.continue();
     });
     await page.goto('/#inside');
-    // A full load ignores the hash: Talk at the top, hash stripped, no studio download.
+    // A full load ignores the hash: the landing page at the top, hash stripped, no studio download.
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.locator('body')).toHaveAttribute('data-view', 'talk');
+    await expect(page.locator('body')).toHaveAttribute('data-view', 'home');
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
     await expect(page.locator('#assistant-readiness')).not.toHaveText('Checking setup');
     await expect(page.locator('.hardware-canvas canvas')).toHaveCount(0);
@@ -620,13 +642,15 @@ test.describe('first-load navigation', () => {
     await expect(page.locator('#inside')).toHaveAttribute('data-trigger-count', '0');
   });
 
-  test('fresh deep links open Talk at the top; aliases, back/forward and reload stay honest', async ({ page }) => {
+  test('fresh deep links open the landing page at the top; aliases, back/forward and reload stay honest', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/#wins');
-    // Fresh loads ignore the hash: Talk at the top, hash stripped.
+    // Fresh loads ignore the hash: the landing page at the top, hash stripped.
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.locator('body')).toHaveAttribute('data-view', 'talk');
+    await expect(page.locator('body')).toHaveAttribute('data-view', 'home');
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    await expect(page.locator('#home-title')).toBeInViewport();
+    await openTalk(page);
     await expect(page.locator('#talk-title')).toBeInViewport();
     await page.locator('#chat-draft').fill('Keep this while I wander.');
     await openWorld(page);
@@ -641,14 +665,14 @@ test.describe('first-load navigation', () => {
     await page.evaluate(() => { location.hash = '#wins'; });
     await expect(page.locator('#wins-title')).toBeInViewport();
     await page.evaluate(() => { location.hash = '#not-a-view'; });
-    await expect(page.locator('body')).toHaveAttribute('data-view', 'talk');
-    await expect(page.locator('#voice-talk')).toBeInViewport();
-    // A reload is a fresh load: Talk at the top again.
+    await expect(page.locator('body')).toHaveAttribute('data-view', 'home');
+    await expect(page.locator('#home-title')).toBeInViewport();
+    // A reload is a fresh load: the landing page at the top again.
     await page.reload();
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.locator('body')).toHaveAttribute('data-view', 'talk');
+    await expect(page.locator('body')).toHaveAttribute('data-view', 'home');
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
-    await expect(page.locator('#voice-talk')).toBeInViewport();
+    await expect(page.locator('#home-title')).toBeInViewport();
   });
 });
 
@@ -962,7 +986,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
   test('home keeps details out of the way; shortcuts, Activity and Settings work by keyboard with focus return', async ({ page }) => {
     const mock = await mockAI(page);
     await page.setViewportSize({ width: 320, height: 568 });
-    await page.goto('/');
+    await gotoTalk(page);
     await expect(page.locator('[data-app-view]:visible')).toHaveCount(1);
     await expect(page.locator('#metric-model')).toBeHidden();
     await expect(page.locator('#speak-replies')).toBeHidden();
@@ -997,7 +1021,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
 
   test('missing keys are truthful; physical Talk/Stop/Switch do not invent a connection or touch companion state', async ({ page }) => {
     const mock = await mockAI(page, { authenticated: false, authConfigured: false, configured: [] });
-    await page.goto('/');
+    await gotoTalk(page);
     await expect(page.locator('#assistant-readiness')).toHaveText('Needs setup');
     await expect(page.locator('[data-screen-message]')).toHaveText('Needs setup');
     await expect(page.locator('#metric-replies')).toHaveText('0');
@@ -1040,7 +1064,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
     const mock = await mockAI(page);
     mock.missingConfig = true;
     expectedAPIFailures.get(page).add('/api/config');
-    await page.goto('/#talk');
+    await gotoTalk(page);
     await expect(page.locator('#assistant-readiness')).toHaveText('Unavailable');
     await page.locator('#voice-talk').click();
     await expect(page.locator('#connections-summary')).toContainText('couldn’t reach');
@@ -1060,7 +1084,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
 
   test('unlock failure, success, expiry, and lock use session endpoints without storing or auto-sending the code', async ({ page }) => {
     const mock = await mockAI(page, { authenticated: false });
-    await page.goto('/#talk');
+    await gotoTalk(page);
     await expect(page.locator('#assistant-readiness')).toHaveText('Locked');
     await expect(page.locator('#assistant-setup')).toHaveText('Unlock Mori↗');
     await page.locator('#voice-talk').click();
@@ -1111,7 +1135,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
 
   test('all quick actions choose a real mode and editable helper without sending until asked', async ({ page }) => {
     const mock = await mockAI(page);
-    await page.goto('/#talk');
+    await gotoTalk(page);
     await expect(page.locator('#assistant-readiness')).toHaveText('Ready to try');
     const modes = ['write', 'summarize', 'plan', 'translate', 'explain', 'chat'];
     for (const [index, mode] of modes.entries()) {
@@ -1136,7 +1160,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
   test('provider histories stay separate; new conversation clears only its chat; reload forgets chats, not the local world', async ({ page }) => {
     const mock = await mockAI(page);
     await page.emulateMedia({ colorScheme: 'light' });
-    await page.goto('/');
+    await gotoTalk(page);
     await adoptCompanion(page, 'Miso', 'Lavender');
     await page.getByRole('button', { name: 'Switch to dark mode' }).click();
     await sendDraft(page, 'OpenAI first question');
@@ -1174,7 +1198,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
 
   test('leaving Talk stops playback, listening and pending replies while preserving each AI’s draft, mode and history', async ({ page }) => {
     const mock = await mockAI(page, { speech: { autoEnd: false } });
-    await page.goto('/');
+    await gotoTalk(page);
     await page.locator('#chat-draft').fill('OpenAI conversation to keep');
     await page.locator('#send-message').click();
     await expect(page.locator('#assistant-console')).toHaveAttribute('data-phase', 'speaking');
@@ -1243,7 +1267,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
         reply: replyText, usage: { inputTokens: 2, outputTokens: 4, totalTokens: 6 }, durationMs: 999999,
       }));
     };
-    await page.goto('/#talk');
+    await gotoTalk(page);
     await sendDraft(page, userText);
     await openActivity(page);
     await expect(page.locator('.chat-message.user p')).toHaveText(userText);
@@ -1297,7 +1321,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
         }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
       };
     });
-    await page.goto('/#talk');
+    await gotoTalk(page);
     await expect(page.locator('#assistant-readiness')).toHaveText('Ready to try');
     await page.locator('#chat-draft').fill('First pending request');
     await page.locator('#send-message').click();
@@ -1336,7 +1360,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
     const mock = await mockAI(page);
     expectedAPIFailures.get(page).add('/api/chat');
     mock.onChat = (route) => fulfillJSON(route, { error: { code: 'UPSTREAM_ERROR', message: 'Fixture failure' } }, 502);
-    await page.goto('/#talk');
+    await gotoTalk(page);
     await page.locator('[data-provider="gemini"]').click();
     await page.locator('#chat-draft').fill('Please explain this.');
     await page.locator('#send-message').click();
@@ -1374,7 +1398,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
   test('config limits are enforced before sending, without truncating or sharing conversation history', async ({ page }) => {
     const mock = await mockAI(page, { limits: { maxMessageChars: 80, maxMessages: 3, maxTotalChars: 500 } });
     mock.onChat = (route, payload) => fulfillJSON(route, jsonReply(payload.provider, { reply: 'A short answer.' }));
-    await page.goto('/#talk');
+    await gotoTalk(page);
     await expect(page.locator('#chat-draft')).toHaveAttribute('maxlength', '80');
     await page.locator('#chat-draft').evaluate((element) => {
       element.value = 'x'.repeat(81);
@@ -1404,7 +1428,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
 
   test('voice starts only by gesture, sends one final turn to the chosen AI/mode, speaks with mic off, and stops cleanly', async ({ page }) => {
     const mock = await mockAI(page, { speech: { autoEnd: false } });
-    await page.goto('/#talk');
+    await gotoTalk(page);
     await expect(page.locator('#assistant-readiness')).toHaveText('Ready to try');
     expect(await page.evaluate(() => window.__speech.starts)).toBe(0);
     await page.locator('[data-provider="claude"]').click();
@@ -1459,7 +1483,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
 
   test('unsupported speech falls back to typing without touching native microphone or speech services', async ({ page }) => {
     const mock = await mockAI(page, { speech: { listen: false, speak: false } });
-    await page.goto('/#talk');
+    await gotoTalk(page);
     await expect(page.locator('#voice-talk')).toBeDisabled();
     await expect(page.locator('#voice-help')).toContainText('isn’t supported');
     await expect(page.locator('#speak-replies')).toBeDisabled();
@@ -1474,7 +1498,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
 
   test('permission, no-speech and speech-network errors are recoverable; pagehide cancels listening', async ({ page }) => {
     const mock = await mockAI(page);
-    await page.goto('/#talk');
+    await gotoTalk(page);
     await expect(page.locator('#assistant-readiness')).toHaveText('Ready to try');
     for (const [code, text] of [['not-allowed', 'permission was denied'], ['no-speech', 'No words were heard'], ['network', 'speech service could not connect']]) {
       await page.locator('#voice-talk').click();
@@ -1508,7 +1532,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
         });
       };
     });
-    await page.goto('/#talk');
+    await gotoTalk(page);
     await expect(page.locator('#assistant-readiness')).toHaveText('Ready to try');
     await setReadAloud(page, false);
     await page.locator('#chat-draft').fill('First line');
@@ -1534,7 +1558,7 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
 
   test('console and connection controls retain readable theme contrast and fit small screens', async ({ page }) => {
     await mockAI(page, { authenticated: false });
-    await page.goto('/#talk');
+    await gotoTalk(page);
     for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       for (const theme of ['light', 'dark']) {

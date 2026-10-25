@@ -184,7 +184,7 @@ summary { cursor: pointer; }
   .site-header .logo { gap: 6px; font-size: 27px; }
   .site-header nav { gap: 0; margin-right: 0; }
   .site-header nav a { display: inline-flex; padding: 8px 9px; font-size: 11px; }
-  .site-header nav .talk-nav, .wide-label { display: none; }
+  .wide-label { display: none; }
   .site-header .theme-toggle { margin-left: 0; }
   .talk-section { width: calc(100% - 36px); padding: 17px 0 6px; }
   .talk-heading h1 { font-size: 31px; letter-spacing: -1.3px; }

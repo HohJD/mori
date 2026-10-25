@@ -4,7 +4,10 @@ Copyright 2014 The DM Sans Project Authors (https://github.com/googlefonts/dm-fo
 Space Grotesk
 Copyright 2020 The Space Grotesk Project Authors (https://github.com/floriankarsten/space-grotesk)
 
-Both font families are licensed under the SIL Open Font License, Version 1.1.
+Fredoka
+Copyright 2016 The Fredoka Project Authors (https://github.com/hafontia-zz/Fredoka-One)
+
+All three font families are licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
 http://scripts.sil.org/OFL
 

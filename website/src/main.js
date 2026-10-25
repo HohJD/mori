@@ -12,12 +12,14 @@ import { mountDevices } from './device.js';
 import { initHardware } from './hardware.js';
 import { initAssistant } from './assistant.js';
 import { initDisclosures, initNavigation } from './navigation.js';
+import { initLanding } from './landing.js';
 
 const $ = (selector) => document.querySelector(selector);
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 initTheme();
 mountDevices();
 mountCreatures();
+const landing = initLanding(reducedMotion);
 const assistant = initAssistant({ showTalk: () => navigation.navigate('#talk', { focus: false }) });
 initDisclosures();
 let hardware;
@@ -372,6 +374,7 @@ navigation = initNavigation({
   },
   onChange(view) {
     assistant.setActive(view === 'talk');
+    landing.setActive(view === 'home');
     if (view === 'device') {
       hardware ||= initHardware(reducedMotion);
       hardware.setActive(true);
