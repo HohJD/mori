@@ -50,9 +50,19 @@ async function openActivity(page) {
   }
 }
 
+// The header settings icon lives on Talk; the footer opens the same dialog anywhere.
 async function openSettings(page) {
-  await page.locator('.settings-button').click();
+  const trigger = await page.locator('.settings-button').isVisible()
+    ? page.locator('.settings-button') : page.locator('.app-footer [data-connections]');
+  await trigger.click();
   await expect(page.locator('#connections-dialog')).toBeVisible();
+  return trigger;
+}
+
+// Device is not in the header; the landing page links to the studio.
+async function openDevice(page) {
+  if (await page.locator('body').getAttribute('data-view') !== 'home') await page.locator('.logo').click();
+  await page.locator('.lp-how-link').click();
 }
 
 async function setReadAloud(page, checked) {
@@ -69,7 +79,7 @@ async function chooseMode(page, mode) {
 }
 
 async function openDeviceControls(page) {
-  await page.locator('nav [data-view-link="device"]').click();
+  await openDevice(page);
   const details = page.locator('#device-controls');
   if (!await details.evaluate((element) => element.open)) await details.locator('summary').click();
 }
@@ -98,7 +108,7 @@ async function freezeClock(page) {
 }
 
 async function enterHardware(page, renderer = 'webgl') {
-  await page.locator('nav [data-view-link="device"]').click();
+  await openDevice(page);
   await expect(page.locator('[data-app-view="device"]')).toBeVisible();
   await expect(page.locator('#inside')).toHaveAttribute('data-renderer', renderer, { timeout: 15_000 });
   if (renderer === 'webgl') {
@@ -424,13 +434,13 @@ test('names and tasks are text, whitespace is rejected, and dialogs and radios w
   await expect(page.locator('#wins-list img, #session-task img')).toHaveCount(0);
   await page.reload();
   await expect(page.locator('#habitat-title')).toHaveText('<img src=x>’s little corner');
-  await openSettings(page);
+  const settingsTrigger = await openSettings(page);
   await page.locator('#privacy summary').focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('#privacy')).toHaveAttribute('open');
   await expect(page.locator('#privacy')).toContainText('No microphone starts on load');
   await page.keyboard.press('Escape');
-  await expect(page.locator('.settings-button')).toBeFocused();
+  await expect(settingsTrigger).toBeFocused();
 });
 
 test('legacy names migrate, corrupt data recovers, and unavailable storage is disclosed', async ({ page, context }) => {
@@ -568,8 +578,7 @@ test.describe('first-load navigation', () => {
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
     await expect(page.locator('#assistant-readiness')).not.toHaveText('Checking setup');
     await expect(page.locator('.hardware-canvas canvas')).toHaveCount(0);
-    await page.getByRole('navigation', { name: 'Main navigation' })
-      .getByRole('link', { name: 'Device', exact: true }).click();
+    await openDevice(page);
     await expect(page.locator('#inside')).toHaveAttribute('data-renderer', 'webgl', { timeout: 15_000 });
     await expect(page.locator('#inside')).toHaveAttribute('data-trigger-count', '1');
     await expectAnchorSettled(page, '#inside');
@@ -582,8 +591,7 @@ test.describe('first-load navigation', () => {
     await page.goto('/');
     await expect(page.locator('#inside')).toHaveAttribute('data-renderer', 'loading');
     await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'smooth');
-    await page.getByRole('navigation', { name: 'Main navigation' })
-      .getByRole('link', { name: 'Device', exact: true }).click();
+    await openDevice(page);
     await expect(page.locator('#inside')).toHaveAttribute('data-renderer', 'webgl', { timeout: 15_000 });
     await expect(page.locator('#inside')).toHaveAttribute('data-trigger-count', '1');
     await expectAnchorSettled(page, '#inside');

@@ -83,6 +83,16 @@ The 3D studio uses exactly pinned **Three.js 0.186.1** and **GSAP 3.15.0**
 (including ScrollTrigger). Software notices ship in
 `website/public/software-licenses.txt`; GSAP uses its standard no-charge license.
 
+## One design system
+
+Every view shares the landing page's sticker-book look: Fredoka headings, 2px ink
+outlines, offset drop shadows, pill buttons and chips, lime for the chosen or
+primary thing, and a dotted paper background. `website/src/system.css` loads
+last; it maps the older colour tokens onto the shared palette and restyles common
+components (buttons, chips, inputs, cards, dialogs, header, footer) for Talk,
+Play, Device and Settings. Add new components with these tokens rather than new
+colours.
+
 ## The landing page
 
 A fresh visit opens the **landing page** (`/` or `#home`): a sticker-book
@@ -122,8 +132,10 @@ Without the token the endpoint answers `503 SETUP_REQUIRED` and the form says so
 - **Talk** lives at `#talk` (or the legacy `#top`). The logo returns to the
   landing page. Talk, the composer and Send fit the first screen, including
   a compact 320×568 window; there is no empty transcript panel before a reply.
-- **Device** (`#inside`) and **Your world** (`#play`, with `#wins` for saved wins)
-  are quiet header links, including on mobile. These are same-document hash
+- The header is deliberately small: the logo (landing page), **Play** (`#play`,
+  with `#wins` for saved wins), **Talk**, the theme toggle, and **Join waitlist**.
+  The settings icon appears only on Talk; the footer's Help & privacy opens the
+  same dialog everywhere. **Device** (`#inside`) is linked from the landing page. These are same-document hash
   views, not separate pages or a routing framework. Inactive views are natively
   `hidden` and `inert`: no home-page height and no stray keyboard stops.
 - A fresh visit or reload always opens the landing page at the top; the URL
@@ -352,7 +364,8 @@ These write `/tmp/mori-simple-review/mori-desktop.png` and
 ```text
 website/index.html          Semantic page, forms, and native dialogs
 website/src/landing.js      Landing page creatures, hero interactions, reveals
-website/src/landing.css     Landing page styles, scoped light/dark tokens
+website/src/landing.css     Landing page sections
+website/src/system.css      Shared tokens and components for every view
 website/src/main.js         DOM/controller and explicit user actions
 website/src/navigation.js   Hidden hash views, anchors, disclosure focus handling
 website/src/assistant.js    Provider-isolated chat, connection gate, metrics

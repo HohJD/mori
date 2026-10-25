@@ -3,55 +3,10 @@
 @import '@fontsource/fredoka/latin-700.css';
 
 /*
- * The landing page: sticker-book cute. Chunky ink outlines, pastel tiles,
- * one lime highlight. Tokens are scoped so the app views keep their palette.
+ * The landing page: sticker-book cute. Shared tokens and components live in
+ * system.css so every view uses the same look.
  */
-:root[data-theme="light"] .landing, :root:not([data-theme]) .landing {
-  --lp-paper: #f6f5ee;
-  --lp-ink: #1f2e22;
-  --lp-muted: #4d5e4f;
-  --lp-card: #fffef9;
-  --lp-line: #1f2e22;
-  --lp-drop: #1f2e22;
-  --lp-sage: #dbe5c6;
-  --lp-cream: #f6ead2;
-  --lp-lavender: #e4ddf3;
-  --lp-peach: #f8d6c6;
-  --lp-sky: #d6e8f0;
-  --lp-lime-soft: #ebfbbf;
-  --lp-squiggle: #8fc13a;
-  --lp-dot: #1f2e2214;
-}
-:root[data-theme="dark"] .landing {
-  --lp-paper: #0b0f0c;
-  --lp-ink: #eef0e6;
-  --lp-muted: #a9b5aa;
-  --lp-card: #141b15;
-  --lp-line: #e3ead2;
-  --lp-drop: #000;
-  --lp-sage: #1e2a1b;
-  --lp-cream: #2a2418;
-  --lp-lavender: #231e30;
-  --lp-peach: #2d1e1a;
-  --lp-sky: #15232c;
-  --lp-lime-soft: #222c10;
-  --lp-squiggle: #d7ff74;
-  --lp-dot: #e3ead212;
-}
-
-.landing {
-  --lp-lime: #d7ff74;
-  --lp-on-lime: #1a250f;
-  --lp-display: 'Fredoka', var(--display), sans-serif;
-  --lp-shadow: 4px 4px 0 var(--lp-drop);
-  --lp-radius: 26px;
-  overflow-x: clip;
-  background:
-    radial-gradient(circle at 1px 1px, var(--lp-dot) 1.2px, transparent 1.6px) 0 0 / 22px 22px,
-    var(--lp-paper);
-  color: var(--lp-ink);
-}
-body[data-view="home"] { background: var(--lp-paper, var(--background)); }
+.landing { overflow-x: clip; color: var(--lp-ink); }
 .landing h1, .landing h2, .landing h3 { font-family: var(--lp-display); color: var(--lp-ink); }
 .landing p { color: var(--lp-muted); text-wrap: pretty; }
 .landing h2 { text-wrap: balance; }
@@ -362,7 +317,6 @@ body[data-view="home"] { background: var(--lp-paper, var(--background)); }
   .lp-reveal { opacity: 1; translate: none; }
 }
 
-/* The sticky header stays page-width but paints edge to edge over the bands. */
-body[data-view="home"] .site-header { box-shadow: 0 0 0 100vmax var(--background); clip-path: inset(0 -100vmax); }
 .lp-joined-title:focus { outline: none; }
 .lp-fineprint a { display: inline-block; padding: 14px 0; margin-block: -14px; color: var(--lp-ink); font-weight: 600; text-decoration: underline wavy var(--lp-squiggle); text-underline-offset: 4px; }
+.lp-how-link { margin-top: 22px; }

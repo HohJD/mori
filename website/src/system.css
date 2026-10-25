@@ -1,0 +1,195 @@
+/*
+ * One look for every view: the landing page's sticker-book system.
+ * Loaded last. Token remaps first, then shared components. Rules sit under
+ * `:root[data-theme] body` so they outrank the older per-view stylesheets.
+ */
+:root {
+  --display: 'Fredoka', 'Space Grotesk', sans-serif;
+  --lp-lime: #d7ff74;
+  --lp-on-lime: #1a250f;
+  --lp-display: var(--display);
+  --lp-shadow: 4px 4px 0 var(--lp-drop);
+  --lp-radius: 26px;
+}
+:root[data-theme="light"], :root:not([data-theme]) {
+  --lp-paper: #f6f5ee;
+  --lp-ink: #1f2e22;
+  --lp-muted: #4d5e4f;
+  --lp-card: #fffef9;
+  --lp-line: #1f2e22;
+  --lp-drop: #1f2e22;
+  --lp-sage: #dbe5c6;
+  --lp-cream: #f6ead2;
+  --lp-lavender: #e4ddf3;
+  --lp-peach: #f8d6c6;
+  --lp-sky: #d6e8f0;
+  --lp-lime-soft: #ebfbbf;
+  --lp-squiggle: #8fc13a;
+  --lp-dot: #1f2e2214;
+  --ink: var(--lp-ink);
+  --muted: var(--lp-muted);
+  --surface: #f0f2e8;
+  --surface-strong: var(--lp-card);
+  --surface-soft: var(--lp-sage);
+  --border: #1f2e2233;
+  --control-border: var(--lp-line);
+  --accent-fill: var(--lp-lime);
+  --accent-fill-hover: #e5ffa6;
+  --accent-ink: var(--lp-on-lime);
+  --hardware-stage-bg: var(--lp-sage);
+  --hardware-card-bg: var(--lp-card);
+  --shadow: var(--lp-shadow);
+}
+:root[data-theme="dark"] {
+  --lp-paper: #0b0f0c;
+  --lp-ink: #eef0e6;
+  --lp-muted: #a9b5aa;
+  --lp-card: #141b15;
+  --lp-line: #e3ead2;
+  --lp-drop: #000;
+  --lp-sage: #1e2a1b;
+  --lp-cream: #2a2418;
+  --lp-lavender: #231e30;
+  --lp-peach: #2d1e1a;
+  --lp-sky: #15232c;
+  --lp-lime-soft: #222c10;
+  --lp-squiggle: #d7ff74;
+  --lp-dot: #e3ead212;
+  --background: var(--lp-paper);
+  --ink: var(--lp-ink);
+  --muted: var(--lp-muted);
+  --surface: #182019;
+  --surface-strong: var(--lp-card);
+  --surface-soft: var(--lp-sage);
+  --border: #e3ead233;
+  --control-border: var(--lp-line);
+  --accent-fill: var(--lp-lime);
+  --accent-ink: var(--lp-on-lime);
+  --hardware-stage-bg: #121a13;
+  --hardware-card-bg: var(--lp-card);
+  --shadow: var(--lp-shadow);
+}
+
+:root[data-theme] body {
+  background:
+    radial-gradient(circle at 1px 1px, var(--lp-dot) 1.2px, transparent 1.6px) 0 0 / 22px 22px,
+    var(--lp-paper);
+  color: var(--lp-ink);
+
+  /* Type: rounded display everywhere, no serif italics. */
+  h1, h2, h3, h4, .eyebrow, .button, .text-link, legend { font-family: var(--display); }
+  h1, h2 { font-weight: 600; letter-spacing: -.03em; color: var(--lp-ink); text-wrap: balance; }
+  h3 { font-weight: 600; letter-spacing: -.01em; }
+  h1 em, h2 em {
+    color: inherit; font-family: inherit; font-style: normal; font-weight: inherit;
+    text-decoration: underline wavy var(--lp-squiggle); text-decoration-thickness: 4px;
+    text-underline-offset: .18em; text-decoration-skip-ink: none;
+  }
+  .eyebrow { display: inline-block; padding: 3px 12px; border: 2px solid var(--lp-line); border-radius: 999px; background: var(--lp-card); color: var(--lp-ink); font-size: 12px; font-weight: 600; letter-spacing: .04em; }
+  .section-intro, .play-intro p { color: var(--lp-muted); }
+
+  /* Header: logo, two links, theme, one call to action. */
+  .site-header { border-bottom: 2px solid var(--lp-line); background: var(--lp-paper); box-shadow: 0 0 0 100vmax var(--lp-paper); clip-path: inset(0 -100vmax); }
+  .site-header .logo { font-family: var(--display); font-weight: 600; letter-spacing: -.04em; color: var(--lp-ink); }
+  .site-header .logo-mark { border-color: var(--lp-ink); }
+  .site-header .logo-mark::before, .site-header .logo-mark::after { background: var(--lp-ink); }
+  .site-header nav a { padding-inline: 16px; border: 2px solid transparent; color: var(--lp-ink); font-family: var(--display); font-size: 15px; font-weight: 500; }
+  .site-header nav a:hover { color: var(--lp-ink); border-color: var(--lp-line); }
+  .site-header nav a[aria-current="page"] { border-color: var(--lp-line); background: var(--lp-lime); color: var(--lp-on-lime); }
+  .header-cta { display: inline-flex; min-height: 44px; align-items: center; padding: 8px 18px; border: 2px solid var(--lp-line); border-radius: 999px; background: var(--lp-lime); color: var(--lp-on-lime); box-shadow: 3px 3px 0 var(--lp-drop); font-family: var(--display); font-size: 15px; font-weight: 600; white-space: nowrap; transition: transform .15s, box-shadow .15s; }
+  .header-cta:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--lp-drop); }
+  .settings-button { display: none; }
+  &[data-view="talk"] .settings-button { display: inline-grid; }
+
+  /* Buttons */
+  .button { min-height: 50px; border: 2px solid var(--lp-line); border-radius: 999px; box-shadow: var(--lp-shadow); font-size: 15px; font-weight: 600; transition: transform .15s, box-shadow .15s, background .15s; }
+  .button:hover:not(:disabled) { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--lp-drop); }
+  .button:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--lp-drop); }
+  .button-primary, .button-primary:hover { border-color: var(--lp-line); background: var(--lp-lime); color: var(--lp-on-lime); }
+  .button-outline, .button-outline:hover { border-color: var(--lp-line); background: var(--lp-card); color: var(--lp-ink); }
+  .icon-button { border: 2px solid var(--lp-line); background: var(--lp-card); color: var(--lp-ink); }
+  .icon-button:hover { background: var(--lp-lime); color: var(--lp-on-lime); }
+  .text-link { border-bottom: 0; color: var(--lp-ink); font-weight: 600; text-decoration: underline wavy var(--lp-squiggle); text-underline-offset: 6px; }
+  .text-link:hover { color: var(--lp-ink); }
+
+  /* Inputs */
+  input[type="text"], input[type="password"], textarea { border: 2px solid var(--lp-line); border-radius: 16px; background: var(--lp-card); color: var(--lp-ink); }
+  input::placeholder, textarea::placeholder { color: var(--lp-muted); }
+
+  /* Cards share one outline, radius and drop shadow. */
+  .habitat, .focus-card, .composer-shell, .activity-sheet, .wins-empty, dialog {
+    border: 2px solid var(--lp-line); border-radius: var(--lp-radius); box-shadow: var(--lp-shadow);
+  }
+  .focus-card, .composer-shell, .activity-sheet, .wins-empty, dialog { background: var(--lp-card); }
+  .composer-shell textarea { border: 0; border-radius: 14px; background: transparent; }
+  .wins-empty { padding: 26px 30px; }
+  .composer-shell:focus-within { border-color: var(--lp-line); box-shadow: 6px 6px 0 var(--lp-drop); }
+
+  /* Choice chips: outlined pills, the chosen one inked. */
+  .agent-picker { padding: 5px; border: 2px solid var(--lp-line); background: var(--lp-card); }
+  .agent-picker button { font-family: var(--display); font-size: 15px; font-weight: 500; color: var(--lp-ink); }
+  .agent-picker button[aria-pressed="true"] { border: 2px solid var(--lp-line); background: var(--lp-lime); color: var(--lp-on-lime); box-shadow: none; }
+  .quick-actions button, .shortcuts > summary, .activity-disclosure > summary, .new-conversation { border: 2px solid var(--lp-line); border-radius: 999px; background: var(--lp-card); color: var(--lp-ink); font-family: var(--display); font-size: 14px; font-weight: 500; }
+  .activity-disclosure > summary, .new-conversation { gap: 6px; padding: 8px 16px; }
+  .quick-actions button[aria-pressed="true"], .shortcuts[data-active="true"] > summary, .shortcuts[open] > summary { background: var(--lp-lime); color: var(--lp-on-lime); }
+  .quick-actions button:hover, .shortcuts > summary:hover { color: inherit; transform: translateY(-1px); }
+  .duration-options label > span, .interaction-buttons button { border: 2px solid var(--lp-line); border-radius: 999px; background: var(--lp-card); color: var(--lp-ink); font-family: var(--display); font-weight: 500; }
+  .duration-options input:checked + span { border-color: var(--lp-line); background: var(--lp-lime); color: var(--lp-on-lime); }
+  .interaction-buttons button { box-shadow: 3px 3px 0 var(--lp-drop); }
+  .interaction-buttons button:hover { border-color: var(--lp-line); background: var(--lp-lime); color: var(--lp-on-lime); }
+  .interaction-buttons button span { color: inherit; }
+
+  /* The big Talk button and its avatar ring. */
+  .talk-button { border: 2px solid var(--lp-line); background: var(--lp-lime); color: var(--lp-on-lime); box-shadow: var(--lp-shadow); font-family: var(--display); font-weight: 600; }
+  .talk-button:hover:not(:disabled) { background: var(--lp-lime); transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--lp-drop); }
+  .presence-ring { border-color: var(--lp-line); }
+
+  /* Your world */
+  .habitat { background: var(--lp-sage); }
+  .focus-card { background: var(--lp-cream); }
+  .timer-display { color: var(--lp-ink); letter-spacing: -.03em; }
+  .wins-section { border-top: 0; }
+  .win-totals strong, .win-totals b { font-family: var(--display); }
+
+  /* Device studio: same type and chips, but its labels stay plain text so the
+     sticky 3D layout keeps its measured geometry. */
+  .hardware-story .eyebrow { padding: 0; border: 0; background: none; }
+  .hardware-part-index button { border: 2px solid var(--lp-line); border-radius: 14px; background: var(--lp-card); color: var(--lp-ink); font-family: var(--display); }
+  .hardware-part-index button[aria-pressed="true"], .hardware-part-index button[aria-current="true"] { background: var(--lp-lime); color: var(--lp-on-lime); }
+  .hardware-view-controls { border: 2px solid var(--lp-line); background: var(--lp-card); }
+
+  /* Dialogs */
+  dialog { color: var(--lp-ink); }
+  dialog::backdrop { background: #1f2e2299; backdrop-filter: blur(4px); }
+  dialog > p:not(.eyebrow) { color: var(--lp-muted); }
+  .connection-list li { border: 2px solid var(--lp-line); border-radius: 16px; background: var(--lp-paper); }
+  .settings-detail { border-top: 2px dashed var(--border); }
+  .settings-detail > summary { font-family: var(--display); font-size: 16px; font-weight: 500; }
+  .settings-detail[open] > summary { color: var(--lp-ink); }
+
+  /* Footer */
+  .app-footer { border-top: 2px solid var(--lp-line); color: var(--lp-muted); font-family: var(--display); font-size: 14px; }
+  .app-footer button { color: var(--lp-ink); font-family: var(--display); font-size: 14px; font-weight: 500; }
+}
+
+@media (max-width: 680px) {
+  :root[data-theme] body {
+    .site-header nav a { padding-inline: 10px; font-size: 14px; }
+    .header-cta { padding-inline: 12px; font-size: 14px; }
+    .wins-empty { flex-direction: column; align-items: flex-start; gap: 14px; padding: 22px; }
+    .wins-empty a { margin-left: 0; }
+  }
+}
+@media (max-width: 380px) {
+  :root[data-theme] body {
+    .site-header nav a { padding-inline: 7px; font-size: 13px; }
+    .header-cta { padding-inline: 10px; font-size: 13px; box-shadow: 2px 2px 0 var(--lp-drop); }
+    .header-cta .wide-label { display: none; }
+    /* At phone-minimum width the logo shrinks to its mark, and Talk (which adds
+       a settings icon) drops the waitlist button to keep every target 44px. */
+    .site-header .logo { min-width: 44px; justify-content: center; gap: 0; font-size: 0; }
+    &[data-view="talk"] .header-cta { display: none; }
+  }
+}
+.narrow-label { display: none; }
+@media (max-width: 680px) { .header-cta .narrow-label { display: inline; } }
