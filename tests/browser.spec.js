@@ -1594,3 +1594,35 @@ test.describe('AI console · mocked API contracts and browser speech', () => {
     }
   });
 });
+
+test('the landing waitlist validates, sends one honest signup, and recovers from server errors', async ({ page }) => {
+  const sent = [];
+  let fail = true;
+  expectedAPIFailures.get(page).add('/api/waitlist');
+  await page.route('**/api/waitlist', async (route) => {
+    sent.push(route.request().postDataJSON());
+    if (fail) {
+      fail = false;
+      await route.fulfill({ status: 503, json: { error: { code: 'SETUP_REQUIRED', message: 'The waitlist isn’t connected yet. Please try again later.' } } });
+    } else await route.fulfill({ json: { joined: true } });
+  });
+  await page.goto('/');
+  await page.locator('.lp-hero a[href="#waitlist"]').click();
+  await expect(page.locator('#final-title')).toBeFocused();
+  await page.locator('#waitlist-email').fill('not-an-email');
+  await page.locator('#waitlist-submit').click();
+  await expect(page.locator('#waitlist-email')).toHaveAttribute('aria-invalid', 'true');
+  expect(sent).toEqual([]);
+  await page.locator('label:has(input[value="pebble"])').click();
+  await page.locator('#waitlist-email').fill('Friend@Example.com');
+  await page.locator('#waitlist-submit').click();
+  await expect(page.locator('#waitlist-status')).toContainText('isn’t connected yet');
+  await expect(page.locator('#waitlist-email')).toHaveValue('Friend@Example.com');
+  await page.locator('#waitlist-submit').click();
+  await expect(page.locator('#waitlist-joined')).toBeVisible();
+  await expect(page.locator('#waitlist-form')).toBeHidden();
+  expect(sent).toEqual([
+    { email: 'Friend@Example.com', interest: 'pebble', website: '' },
+    { email: 'Friend@Example.com', interest: 'pebble', website: '' },
+  ]);
+});

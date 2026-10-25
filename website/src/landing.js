@@ -130,10 +130,69 @@ export function initLanding(reducedMotion) {
     reveals.forEach((element) => observer.observe(element));
   }
 
+  initWaitlist(root);
+
   return {
     setActive(active) {
       if (active && !reducedMotion.matches) window.addEventListener('pointermove', onPointer, { passive: true });
       else window.removeEventListener('pointermove', onPointer);
     },
   };
+}
+
+// The signup posts to /api/waitlist; the server keeps it private. Errors keep
+// the typed address so a retry is one click.
+function initWaitlist(root) {
+  const form = root.querySelector('#waitlist-form');
+  if (!form) return;
+  const email = form.querySelector('#waitlist-email');
+  const submit = form.querySelector('#waitlist-submit');
+  const status = form.querySelector('#waitlist-status');
+  const joined = root.querySelector('#waitlist-joined');
+  const say = (message, tone = '') => {
+    status.textContent = message;
+    status.dataset.tone = tone;
+  };
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (submit.disabled) return;
+    const address = email.value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(address)) {
+      email.setAttribute('aria-invalid', 'true');
+      say('That email address doesn’t look quite right.', 'error');
+      email.focus();
+      return;
+    }
+    email.removeAttribute('aria-invalid');
+    submit.disabled = true;
+    say('Saving your spot…');
+    try {
+      const response = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: address,
+          interest: form.elements.interest.value,
+          website: form.elements.website.value,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error?.message || 'We couldn’t save that just now. Please try again.');
+      form.hidden = true;
+      joined.hidden = false;
+      root.querySelector('[data-lp-waitlist]').classList.add('is-joined');
+      joined.querySelector('.lp-joined-title').focus?.();
+    } catch (error) {
+      say(error instanceof TypeError ? 'You seem to be offline. Please try again.' : error.message, 'error');
+    } finally {
+      submit.disabled = false;
+    }
+  });
+  email.addEventListener('input', () => {
+    if (email.hasAttribute('aria-invalid')) {
+      email.removeAttribute('aria-invalid');
+      say('');
+    }
+  });
 }

@@ -20,7 +20,7 @@ healthy, and Mori does not generate demo replies or fabricate usage. See
 Mori uses provider APIs, **not** ChatGPT/Claude/Gemini app subscriptions or their
 chat history. This first version supports three providers, not every AI agent.
 There are no email/calendar tools, arbitrary account integrations, payments,
-waitlist, cloud transcript database, or manufactured device. It is not an
+cloud transcript database, or manufactured device. It is not an
 installable/offline PWA.
 
 ## Run locally
@@ -95,6 +95,27 @@ targets from the research brief, and the page says the hardware is not on sale.
 Markup lives in `website/index.html`; styles and behaviour in
 `website/src/landing.css` and `website/src/landing.js`. Headlines use the
 self-hosted Fredoka font.
+
+### Waitlist
+
+The landing page ends with a **first batch waitlist** (`#waitlist`): an email
+address plus which product the person is most excited about. It posts to
+`POST /api/waitlist`, which needs no owner code and has its own per-client rate
+limit (5 per 10 minutes). Each signup is one **private** Vercel Blob,
+`waitlist/<sha256 of the email>.json`, holding the email, interest and join time.
+A repeat signup keeps the first record and still reports success, so the form
+never reveals who is already on the list. A hidden honeypot field drops bot
+submissions without storing them.
+
+The Blob store `mori-waitlist` is connected to the Vercel project, which supplies
+`BLOB_READ_WRITE_TOKEN`. To read the list:
+
+```sh
+vercel env pull .env.local   # once, from the linked project
+npm run waitlist > waitlist.csv
+```
+
+Without the token the endpoint answers `503 SETUP_REQUIRED` and the form says so.
 
 ## A small workspace
 
@@ -354,6 +375,8 @@ website/public/favicon.svg Local artwork
 tests/state.test.js         Pure behavior tests
 tests/browser.spec.js       UI/voice contract tests + hardware/theme/local world
 server/                    Server-only configuration, sessions, provider adapters
+server/waitlist.js         Waitlist validation and private Blob storage
+scripts/waitlist-export.mjs  Waitlist CSV export for the owner
 api/[route].js             Serverless API entry
 scripts/dev-api.mjs        Same-origin Vite dev API middleware
 docs/AI_CONNECTIONS.md     Private owner setup, API behavior, limitations

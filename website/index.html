@@ -19,6 +19,7 @@
       <a class="logo" href="#home" aria-label="Mori home"><span class="logo-mark" aria-hidden="true"></span>mori</a>
       <nav aria-label="Main navigation">
         <a href="#lineup" class="lp-nav-only">Products</a>
+        <a href="#waitlist" class="lp-nav-only">Waitlist</a>
         <a href="#talk" data-view-link="talk" class="talk-nav">Talk</a>
         <a href="#inside" data-view-link="device">Device</a>
         <a href="#play" data-view-link="world" aria-label="Your world"><span class="wide-label">Your </span>world</a>
@@ -38,7 +39,7 @@
               <p class="lp-lede">Mori is a pocket-sized pebble with a little pixel friend inside. It sits by your laptop, keeps you company through focus sessions, cheers your small wins, and naps when you do.</p>
               <div class="lp-cta-row">
                 <a class="lp-btn lp-btn-main" href="#play">Adopt one in your browser <span aria-hidden="true">→</span></a>
-                <a class="lp-btn lp-btn-ghost" href="#lineup">See the family</a>
+                <a class="lp-btn lp-btn-ghost" href="#waitlist">Join the waitlist</a>
               </div>
               <ul class="lp-hero-facts" aria-label="Quick facts">
                 <li><b>75 mm</b><span>palm sized</span></li>
@@ -198,21 +199,42 @@
                 <a class="lp-btn lp-btn-main" href="#play">Play now <span aria-hidden="true">→</span></a>
               </article>
             </div>
-            <p class="lp-fineprint lp-reveal">Mori hardware is a prototype in progress and isn't on sale yet. Prices, sizes, and features are design targets and may change after testing.</p>
+            <p class="lp-fineprint lp-reveal">Mori hardware is a prototype in progress and isn't on sale yet. Prices, sizes, and features are design targets and may change after testing. <a href="#waitlist">Join the waitlist</a> to hear first.</p>
           </div>
         </section>
 
-        <section class="lp-section lp-final" aria-labelledby="final-title">
+        <section class="lp-section lp-final" id="waitlist" aria-labelledby="final-title">
           <div class="lp-wrap">
-            <div class="lp-final-card lp-reveal">
+            <div class="lp-final-card lp-reveal" data-lp-waitlist>
               <span class="lp-final-creature" data-lp-creature data-mood="party"></span>
-              <div>
-                <h2 id="final-title">Your desk is<br>a little lonely.</h2>
-                <p>Adopt a Mori in your browser today. Give it a name, start a 5 minute focus session, and see how it feels to have someone cheering for you.</p>
-                <div class="lp-cta-row">
-                  <a class="lp-btn lp-btn-dark" href="#play">Adopt a Mori <span aria-hidden="true">→</span></a>
+              <div class="lp-final-body">
+                <p class="lp-final-kicker">First batch waitlist</p>
+                <h2 id="final-title" tabindex="-1">Your desk is<br>a little lonely.</h2>
+                <p>Get on the list for the first Mori batch. We'll email you when prototypes are ready to try and before preorders open. No spam, just Mori news.</p>
+                <form class="lp-waitlist" id="waitlist-form" novalidate>
+                  <fieldset class="lp-interest">
+                    <legend>I'm most excited about</legend>
+                    <label><input type="radio" name="interest" value="everything" checked><span>All of it</span></label>
+                    <label><input type="radio" name="interest" value="pebble"><span>Pebble</span></label>
+                    <label><input type="radio" name="interest" value="nest"><span>Nest</span></label>
+                    <label><input type="radio" name="interest" value="coats"><span>Coats</span></label>
+                    <label><input type="radio" name="interest" value="plus"><span>Mori+</span></label>
+                  </fieldset>
+                  <div class="lp-waitlist-row">
+                    <label class="lp-visually-hidden" for="waitlist-email">Email address</label>
+                    <input id="waitlist-email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" maxlength="254" required aria-describedby="waitlist-status">
+                    <button class="lp-btn lp-btn-dark" type="submit" id="waitlist-submit">Join the waitlist <span aria-hidden="true">→</span></button>
+                  </div>
+                  <div class="lp-honeypot" aria-hidden="true"><label for="waitlist-website">Leave this empty</label><input id="waitlist-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+                  <p class="lp-waitlist-status" id="waitlist-status" role="status" aria-live="polite"></p>
+                </form>
+                <div class="lp-joined" id="waitlist-joined" hidden>
+                  <p class="lp-joined-title" tabindex="-1">You're on the list! ♥</p>
+                  <p>Mori is doing a tiny happy dance. While you wait, you can adopt one in your browser.</p>
+                </div>
+                <div class="lp-final-links">
+                  <a class="lp-btn lp-btn-ghost" href="#play">Adopt a Mori now</a>
                   <a class="lp-btn lp-btn-ghost" href="#inside">Peek inside the device</a>
-                  <a class="lp-btn lp-btn-ghost" href="#talk">Talk to Mori</a>
                 </div>
               </div>
             </div>

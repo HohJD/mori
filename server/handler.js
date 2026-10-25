@@ -6,11 +6,13 @@ import { ApiError, invalidRequest, publicError } from './errors.js';
 import { assertJsonRequest, assertSameOrigin, readJsonBody, sendJson } from './http.js';
 import { createProviderClient } from './providers.js';
 import { CHAT_RATE, SESSION_RATE, clientAddress, createRateGuard } from './rate-limit.js';
+import { WAITLIST_RATE, createWaitlist, validateWaitlistRequest } from './waitlist.js';
 
 const METHODS = Object.freeze({
   '/api/config': ['GET'],
   '/api/session': ['POST', 'DELETE'],
   '/api/chat': ['POST'],
+  '/api/waitlist': ['POST'],
 });
 
 export function createApiHandler({
@@ -21,11 +23,14 @@ export function createApiHandler({
   timeoutMs,
   bodyTimeoutMs,
   getOidcToken,
+  blobPut,
   rateLimits = {},
 } = {}) {
   const providers = createProviderClient({ env, fetch: fetchImpl, clock: upstreamClock, timeoutMs, getOidcToken });
   const sessionGuard = createRateGuard({ ...SESSION_RATE, ...rateLimits.session, clock });
   const chatGuard = createRateGuard({ ...CHAT_RATE, ...rateLimits.chat, clock });
+  const waitlistGuard = createRateGuard({ ...WAITLIST_RATE, ...rateLimits.waitlist, clock });
+  const joinWaitlist = createWaitlist({ env, put: blobPut, clock });
 
   return async function handleApi(req, res) {
     const controller = new AbortController();
@@ -62,6 +67,15 @@ export function createApiHandler({
         return;
       }
       assertJsonRequest(req);
+      // The waitlist is public: no owner code, its own rate limit, no AI.
+      if (path === '/api/waitlist') {
+        waitlistGuard(clientAddress(req, env));
+        const body = await readJsonBody(req, { signal: controller.signal, timeoutMs: bodyTimeoutMs });
+        const signup = validateWaitlistRequest(body);
+        if (!signup.bot) await joinWaitlist(signup);
+        sendJson(res, 200, { joined: true });
+        return;
+      }
       if (!authConfigured(env)) {
         throw new ApiError(503, 'SETUP_REQUIRED', 'Set a server owner access code of at least 20 characters before using AI.');
       }

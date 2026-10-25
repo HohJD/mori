@@ -978,3 +978,58 @@ test('Gateway credential resolution and fetch are deadline-bound; late tokens ca
   await assert.rejects(client.chat(chatBody()), { code: 'TIMEOUT' });
   assert.equal(signal.aborted, true);
 });
+
+test('waitlist stores one private, hash-named record per address without auth, and hides duplicates and bots', async (t) => {
+  const { BlobError } = await import('@vercel/blob');
+  const saved = new Map();
+  const blobPut = async (path, body, options) => {
+    if (saved.has(path)) throw new BlobError('This blob already exists, use `allowOverwrite: true`');
+    saved.set(path, { body: JSON.parse(body), options });
+    return { pathname: path };
+  };
+  const base = await startServer(t, {
+    env: fixtureEnv({ BLOB_READ_WRITE_TOKEN: 'fixture-blob-token', MORI_ACCESS_CODE: '' }),
+    blobPut,
+    clock: () => NOW,
+    rateLimits: { waitlist: { limit: 50 } },
+  });
+  const join = (body) => call(base, '/api/waitlist', { method: 'POST', body });
+
+  let response = await join({ email: '  Hello@Example.COM ', interest: 'nest', website: '' });
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { joined: true });
+  assert.equal(saved.size, 1);
+  const [[path, record]] = saved;
+  assert.match(path, /^waitlist\/[0-9a-f]{64}\.json$/);
+  assert.ok(!path.includes('example'), 'The pathname never exposes the address');
+  assert.deepEqual(record.body, { email: 'hello@example.com', interest: 'nest', joinedAt: new Date(NOW).toISOString() });
+  assert.equal(record.options.access, 'private');
+  assert.equal(record.options.allowOverwrite, false);
+
+  response = await join({ email: 'hello@example.com' });
+  assert.equal(response.status, 200, 'A repeat signup succeeds quietly');
+  assert.equal(saved.size, 1);
+  assert.equal(saved.values().next().value.body.interest, 'nest', 'The first record is kept');
+
+  response = await join({ email: 'bot@example.com', website: 'https://spam.example' });
+  assert.equal(response.status, 200);
+  assert.equal(saved.size, 1, 'Honeypot submissions are never stored');
+
+  for (const body of [{ email: 'nope' }, { email: 'a b@c.de' }, { email: 'x@y.co', interest: 'rocket' }, { email: 'x@y.co', extra: 1 }]) {
+    await expectError(await join(body), 400, 'INVALID_REQUEST');
+  }
+  assert.equal(saved.size, 1);
+});
+
+test('waitlist is rate limited per client and explains missing storage setup', async (t) => {
+  const base = await startServer(t, {
+    env: fixtureEnv({ BLOB_READ_WRITE_TOKEN: '' }),
+    blobPut: async () => { throw new Error('Unexpected Blob write in test.'); },
+    rateLimits: { waitlist: { limit: 2 } },
+  });
+  const join = () => call(base, '/api/waitlist', { method: 'POST', body: { email: 'hi@example.com' } });
+  await expectError(await join(), 503, 'SETUP_REQUIRED');
+  await expectError(await join(), 503, 'SETUP_REQUIRED');
+  await expectError(await join(), 429, 'RATE_LIMITED');
+  await expectError(await call(base, '/api/waitlist'), 405, 'INVALID_REQUEST');
+});

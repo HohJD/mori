@@ -4,6 +4,7 @@ const destinations = {
   '#home': ['home', 'home'],
   '#moods': ['home', 'moods'],
   '#lineup': ['home', 'lineup'],
+  '#waitlist': ['home', 'waitlist'],
   '#top': ['talk', 'talk'],
   '#talk': ['talk', 'talk'],
   '#main': ['talk', 'talk'],
