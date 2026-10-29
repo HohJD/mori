@@ -10,8 +10,8 @@ const CLOSED = {
   enclosure: [0, 0, .43], bumper: [0, 0, -.13], lens: [0, .34, .49],
   display: [0, .34, .31], buttons: [0, -1.17, .40], pcb: [0, 0, -.10],
   compute: [-.34, .83, .03], motion: [.83, .28, .02], microphone: [-.92, 1.10, .04],
-  mute: [1.36, .80, -.08], speaker: [.35, -.99, -.35], haptic: [-.67, -1.13, -.31],
-  battery: [0, -.03, -.40], power: [0, -1.60, -.12], rear: [0, 0, -.65],
+  mute: [1.70, .80, -.08], speaker: [.35, -.99, -.35], haptic: [-.67, -1.13, -.31],
+  battery: [0, -.03, -.40], power: [0, -1.37, -.68], rear: [0, 0, -.65],
   fasteners: [0, 0, -.25],
 };
 const OPEN = {
@@ -48,13 +48,15 @@ function roundedPath(width, height, radius, x = 0, y = 0, hole = false) {
 
 function pebble(scale = 1, hole = false) {
   const path = hole ? new THREE.Path() : new THREE.Shape();
-  // A slightly asymmetric seed: narrower shoulders up top, a fuller base, and a
-  // whisper of a lean so the silhouette feels organic rather than lathed.
-  path.moveTo(.05 * scale, 2.00 * scale);
-  path.bezierCurveTo(-1.06 * scale, 2.01 * scale, -1.59 * scale, 1.30 * scale, -1.56 * scale, .28 * scale);
-  path.bezierCurveTo(-1.53 * scale, -.94 * scale, -.97 * scale, -2.03 * scale, .03 * scale, -2.06 * scale);
-  path.bezierCurveTo(.99 * scale, -2.03 * scale, 1.59 * scale, -.90 * scale, 1.58 * scale, .32 * scale);
-  path.bezierCurveTo(1.57 * scale, 1.28 * scale, 1.14 * scale, 1.97 * scale, .05 * scale, 2.00 * scale);
+  // Rounded shoulders and a broad, flat heel: the desk buddy can sit upright.
+  path.moveTo(0, 1.94 * scale);
+  path.bezierCurveTo(-1.25 * scale, 1.94 * scale, -1.73 * scale, 1.38 * scale, -1.73 * scale, .40 * scale);
+  path.lineTo(-1.73 * scale, -.95 * scale);
+  path.bezierCurveTo(-1.73 * scale, -1.65 * scale, -1.26 * scale, -1.86 * scale, -.82 * scale, -1.86 * scale);
+  path.lineTo(.82 * scale, -1.86 * scale);
+  path.bezierCurveTo(1.26 * scale, -1.86 * scale, 1.73 * scale, -1.65 * scale, 1.73 * scale, -.95 * scale);
+  path.lineTo(1.73 * scale, .40 * scale);
+  path.bezierCurveTo(1.73 * scale, 1.38 * scale, 1.25 * scale, 1.94 * scale, 0, 1.94 * scale);
   return path;
 }
 
@@ -219,7 +221,8 @@ export function createHardwareScene(mount, { onContextLost }) {
   bezel.holes.push(roundedPath(2.30, 1.83, .40, 0, .34, true));
   mesh(front, extrude(bezel, .045, .02), palette.rim, [0, 0, .185]);
   label(front, 'm o r i', .58, .16, [0, 1.40, .202], { size: 52 });
-  label(front, 'M – 0 1  /  A  L I T T L E  L I F E', 1.16, .12, [0, -1.70, .203], { size: 24 });
+  // Small dimples flank the face; the recording indicator is a separate aperture.
+  for (const x of [-1.35, 1.35]) mesh(front, ownGeometry(new THREE.SphereGeometry(.10, 20, 12)), palette.shellBack, [x, -.48, .13]);
 
   // 02 — An independent open ring, not an opaque slab over the electronics.
   const bumper = groups.get('bumper');
@@ -247,19 +250,19 @@ export function createHardwareScene(mount, { onContextLost }) {
     for (let x = 0; x < 512; x += 20) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 384); ctx.stroke(); }
     for (let y = 0; y < 384; y += 20) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(512, y); ctx.stroke(); }
     ctx.fillStyle = '#b9d69c'; ctx.font = '16px "Space Grotesk", monospace';
-    ctx.fillText('MORI / M–01', 45, 47); ctx.fillText('CONCEPT', 360, 47);
-    ctx.save(); ctx.translate(165, 100); ctx.scale(2.05, 2.05);
+    ctx.fillText('hello, human', 45, 47);
+    ctx.save(); ctx.translate(140, 75); ctx.scale(2.65, 2.65);
     const paths = [
       ['#d4f995', 'M24 13h9V5h9v10h15V7h9v15h9v9h7v27h-8v9H61v9H49V65H34v11H21V65H10V54H3V35h9V23h12z'],
       ['#a5ca72', 'M10 54h11v11h13v11H21V65H10zm51 4h13v9H61v9H49V65h12z'],
       ['#213621', 'M27 32h8v13h-8zm28 0h8v13h-8zM39 48h14v6H39z'],
       ['#ecffc7', 'M18 26h7v6h-7zm5-8h10v6H23z'],
-      ['#accb71', 'M17 46h8v5h-8zm48 0h8v5h-8z'],
+      ['#e9aaa0', 'M17 46h8v5h-8zm48 0h8v5h-8z'],
     ];
     for (const [fill, path] of paths) { ctx.fillStyle = fill; ctx.fill(new Path2D(path)); }
     ctx.restore();
     ctx.fillStyle = '#c8e6a2'; ctx.textAlign = 'center'; ctx.font = '19px "Space Grotesk", monospace';
-    ctx.fillText('your AI, on tap.', 256, 321);
+    ctx.fillText('one little thing at a time.', 256, 331);
     ctx.fillStyle = '#06140a18'; for (let y = 0; y < 384; y += 4) ctx.fillRect(0, y, 512, 1);
   });
   const screenMaterial = ownMaterial(new THREE.MeshBasicMaterial({ map: screenTexture, toneMapped: false }));
@@ -279,7 +282,8 @@ export function createHardwareScene(mount, { onContextLost }) {
   mesh(display, box(.65, .25, .025, .005), palette.flex, [.30, -1.42, -.15], [1.05, 0, 0]);
   for (let i = 0; i < 12; i++) line(display, [[.02 + i * .05, -.85, -.04], [.02 + i * .05, -1.3, -.12]], palette.gold, .005);
   solderPads(display, .04, -1.50, -.04, 11, .05);
-  chip(display, -.57, -1.12, -.025, .28, .26, 'TOUCH');
+  // Physical buttons avoid a touch controller in the first build.
+  label(display, 'SPI / FPC', .42, .12, [-.57, -.97, -.025], { color: '#c3dfb5', size: 22 });
 
   // 05 — Domed caps with a shallow dish, rubber contact discs, and switches.
   const buttons = groups.get('buttons');
@@ -289,13 +293,14 @@ export function createHardwareScene(mount, { onContextLost }) {
   const capDome = ownGeometry(new THREE.LatheGeometry(capProfile, 28));
   [-.65, 0, .65].forEach((x, i) => {
     const y = i === 1 ? -.13 : 0;
-    mesh(buttons, capDome, palette.button, [x, y, .14], [Math.PI / 2, 0, 0]);
+    const cap = mesh(buttons, capDome, i === 1 ? palette.ceramic : palette.shell, [x, y, .14], [Math.PI / 2, 0, 0]);
+    if (i === 1) cap.scale.set(1.06, 1, 1.06);
     mesh(buttons, torus(.198, .012), palette.ink, [x, y, .145]);
     mesh(buttons, cylinder(.17, .04), palette.rubber, [x, y, -.12], [Math.PI / 2, 0, 0]);
     mesh(buttons, cylinder(.17, .04), palette.rubber, [x, y, -.12], [Math.PI / 2, 0, 0]);
     mesh(buttons, box(.30, .30, .075), palette.steel, [x, y, -.22]);
     mesh(buttons, cylinder(.068, .04, 16), palette.black, [x, y, -.16], [Math.PI / 2, 0, 0]);
-    label(buttons, ['■', 'TALK', '⇄'][i], i === 1 ? .29 : .22, .19, [x, y, .218], { color: '#e3edce', size: i === 1 ? 44 : 78 });
+    label(buttons, ['■', 'TALK', '⇄'][i], i === 1 ? .29 : .22, .19, [x, y, .218], { color: '#30432d', size: i === 1 ? 44 : 78 });
   });
 
   // 06 — Copper routing, vias, test pads, passives, connectors, and board silkscreen.
@@ -404,8 +409,8 @@ export function createHardwareScene(mount, { onContextLost }) {
   mesh(power, box(1.22, .48, .045), palette.board, [0, .06, 0]);
   const socket = roundedPath(.47, .20, .075);
   socket.holes.push(roundedPath(.38, .12, .04, 0, 0, true));
-  mesh(power, extrude(socket, .22, .012), palette.steel, [0, -.18, .06], [.75, 0, 0]);
-  mesh(power, box(.31, .025, .20, .008), palette.dark, [0, -.19, .06], [.75, 0, 0]);
+  mesh(power, extrude(socket, .22, .012), palette.steel, [0, -.18, -.19], [0, 0, 0]);
+  mesh(power, box(.31, .025, .20, .008), palette.dark, [0, -.19, -.19], [0, 0, 0]);
   solderPads(power, -.12, -.21, .17, 8, .035);
   chip(power, -.40, .10, .07, .22, .22, 'CHG');
   chip(power, .0, .14, .07, .23, .21, '3V3');
@@ -413,9 +418,12 @@ export function createHardwareScene(mount, { onContextLost }) {
   mesh(power, box(.18, .18, .12), palette.dark, [.27, -.09, .07]);
   label(power, 'USB-C / POWER PATH', 1.05, .12, [0, .35, .03], { color: '#c5ddb9', size: 25 });
 
-  // 15 — A deep rear bowl, internal ribs, speaker vents, and a braided lanyard.
+  // 15 — A deep rear bowl, removable non-slip heel, USB access, and carrying loop.
   const rear = groups.get('rear');
-  mesh(rear, extrude(pebble(.97), .13, .12, 5), palette.shellBack, [0, 0, -.09]);
+  const backShell = pebble(.97);
+  backShell.holes.push(roundedPath(.62, .34, .09, 0, -1.55, true));
+  mesh(rear, extrude(backShell, .13, .12, 5), palette.shellBack, [0, 0, -.09]);
+  mesh(rear, box(1.82, .18, 1.02, .08), palette.rubber, [0, -1.91, .40]);
   const rearLip = pebble(.975);
   rearLip.holes.push(pebble(.89, true));
   mesh(rear, extrude(rearLip, .20, .025), palette.inner, [0, 0, .045]);
@@ -424,30 +432,13 @@ export function createHardwareScene(mount, { onContextLost }) {
     if (x * x + y * y < 12) mesh(rear, cylinder(.027, .012, 10), palette.dark, [.48 + x * .10, -.99 + y * .10, .053], [Math.PI / 2, 0, 0]);
   }
   label(rear, 'MORI\nA LITTLE LIFE OF ITS OWN', 1.16, .42, [0, .58, .058], { size: 24 });
-  mesh(rear, torus(.26, .065), palette.rim, [0, 2.05, -.05]);
-  // Two strands twist around the loop: a woven cord, not a rubber band.
-  const cord = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-.15, 2.23, -.06), new THREE.Vector3(-.23, 2.58, -.10),
-    new THREE.Vector3(.07, 2.74, -.15), new THREE.Vector3(.25, 2.49, -.12), new THREE.Vector3(.13, 2.23, -.06),
+  // A replaceable soft loop, tucked behind one shoulder like a tiny sprout.
+  const carryLoop = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(.72, 1.71, -.04), new THREE.Vector3(.70, 2.15, -.05),
+    new THREE.Vector3(1.00, 2.35, -.06), new THREE.Vector3(1.15, 2.18, -.05),
+    new THREE.Vector3(.90, 1.72, -.04),
   ]);
-  mesh(rear, ownGeometry(new THREE.TubeGeometry(cord, 48, .052, 10, false)), palette.rubber);
-  for (let i = 0; i < 26; i++) {
-    const t = i / 25;
-    const point = cord.getPoint(t);
-    const angle = t * Math.PI * 12;
-    const weave = mesh(rear, ownGeometry(new THREE.SphereGeometry(.053, 6, 4)),
-      i % 2 ? palette.inner : palette.rim,
-      [point.x + Math.cos(angle) * .028, point.y, point.z + Math.sin(angle) * .028]);
-    weave.scale.set(.85, .3, 1);
-  }
-  // A short tail with a crimped metal end cap finishes the carry story.
-  const tail = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(.25, 2.49, -.12), new THREE.Vector3(.44, 2.60, -.14),
-    new THREE.Vector3(.52, 2.76, -.16),
-  ]);
-  mesh(rear, ownGeometry(new THREE.TubeGeometry(tail, 16, .048, 8, false)), palette.rubber);
-  mesh(rear, cylinder(.068, .15, 20), palette.steel, [.555, 2.82, -.165], [0, 0, -.5]);
-  mesh(rear, ownGeometry(new THREE.SphereGeometry(.058, 14, 10)), palette.steel, [.585, 2.885, -.17]);
+  mesh(rear, ownGeometry(new THREE.TubeGeometry(carryLoop, 40, .065, 10, false)), palette.rim);
 
   // 16 — Separate screws, slotted heads, brass inserts, and locating posts.
   const fasteners = groups.get('fasteners');

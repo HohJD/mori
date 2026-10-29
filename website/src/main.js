@@ -14,6 +14,7 @@ import { initAssistant } from './assistant.js';
 import { initDisclosures, initNavigation } from './navigation.js';
 import { initLanding } from './landing.js';
 import './system.css';
+import './refinement.css';
 
 const $ = (selector) => document.querySelector(selector);
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');

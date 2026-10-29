@@ -137,6 +137,7 @@ async function scrollHardware(page, progress) {
 async function expectAnchorSettled(page, selector) {
   // Allow native padding plus a small first-load/font-layout shift, but still
   // reject navigation that stops at the preceding section.
+  const headerHeight = await page.locator('.site-header').evaluate((element) => element.getBoundingClientRect().height);
   let previousY;
   let stableSamples = 0;
   await expect.poll(async () => {
@@ -151,7 +152,7 @@ async function expectAnchorSettled(page, selector) {
     message: `${selector} settles at its anchor, allowing the page's scroll padding`,
     timeout: 10_000,
     intervals: [100],
-  }).toBeLessThanOrEqual(70);
+  }).toBeLessThanOrEqual(headerHeight + 2);
 }
 
 async function captureScene(page) {
@@ -1633,4 +1634,30 @@ test('the landing waitlist validates, sends one honest signup, and recovers from
     { email: 'Friend@Example.com', interest: 'pebble', website: '' },
     { email: 'Friend@Example.com', interest: 'pebble', website: '' },
   ]);
+});
+
+test('refined landing previews finishes without changing adoption and preserves playful reactions', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await mockAI(page);
+  await page.goto('/');
+  const before = await page.evaluate(() => localStorage.getItem('mori-world-v1'));
+  await page.getByRole('button', { name: 'Lavender finish' }).click();
+  await expect(page.locator('[data-lp-pebble]')).toHaveAttribute('data-finish', 'lavender');
+  await expect(page.getByRole('button', { name: 'Lavender finish' })).toHaveAttribute('aria-pressed', 'true');
+  expect(await page.evaluate(() => localStorage.getItem('mori-world-v1'))).toBe(before);
+  await page.getByRole('button', { name: 'Nap', exact: true }).click();
+  await expect(page.locator('[data-lp-pebble]')).toHaveAttribute('data-state', 'sleepy');
+  await page.getByRole('button', { name: 'Pat', exact: true }).click();
+  await expect(page.locator('[data-lp-bubble]')).toContainText('hehe');
+  await page.getByRole('button', { name: 'Sage finish' }).click();
+  await page.evaluate(() => document.fonts.ready);
+  await page.screenshot({ path: testInfo.outputPath('mori-desktop.png'), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: testInfo.outputPath('mori-mobile.png'), fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await openDevice(page);
+  await expect(page.locator('#inside')).toHaveAttribute('data-renderer', 'webgl');
+  await page.locator('[data-hardware-view="assembled"]').click();
+  await expect(page.locator('[data-hardware-view="assembled"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.screenshot({ path: testInfo.outputPath('mori-device.png') });
 });

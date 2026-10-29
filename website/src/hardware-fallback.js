@@ -2,7 +2,7 @@ import { hardwareParts } from './hardware-parts.js';
 
 // An entirely local, detailed vector study remains usable when WebGL/imports fail.
 // The same 16 IDs, inspector, manual views, and highlights work in both renderers.
-const outline = 'M0-102C-66-102-84-60-83 10C-81 71-47 108 0 110C47 108 81 71 83 10C84-60 66-102 0-102Z';
+const outline = 'M0-102C-66-102-90-69-90-18V55Q-90 98-44 98H44Q90 98 90 55V-18C90-69 66-102 0-102Z';
 const closed = {
   enclosure: [460, 295], bumper: [463, 303], lens: [460, 278], display: [462, 282],
   buttons: [460, 351], pcb: [466, 301], compute: [449, 257], motion: [500, 290],
@@ -24,7 +24,7 @@ const artwork = {
   enclosure: `<path d="${outline} M-51-53H51Q62-53 62-41V18Q62 32 49 32H-49Q-62 32-62 18V-41Q-62-53-51-53Z M-46 63a12 12 0 1 0 24 0a12 12 0 1 0-24 0 M-12 70a12 12 0 1 0 24 0a12 12 0 1 0-24 0 M22 63a12 12 0 1 0 24 0a12 12 0 1 0-24 0" fill="url(#shell)" fill-rule="evenodd" stroke="#d6dfc2" stroke-width="2"/><text y="-70" text-anchor="middle" letter-spacing="4" font-size="10" fill="#384a34">mori</text><text y="96" text-anchor="middle" font-size="5" fill="#384a34">M–01 / A LITTLE LIFE</text>`,
   bumper: `<path d="${outline}" fill="none" stroke="#58694e" stroke-width="12"/><path d="${outline}" transform="translate(3 5)" fill="none" stroke="#9eaf8b" stroke-width="3"/>`,
   lens: '<rect x="-61" y="-45" width="122" height="90" rx="24" fill="#cbe5d529" stroke="#bdd6c3" stroke-width="2"/><path d="M-48-26Q-48-35-32-35H34" fill="none" stroke="#e3f3df" stroke-width="2"/>',
-  display: `<rect x="-62" y="-46" width="124" height="94" rx="20" fill="#14251d" stroke="#718575" stroke-width="4"/><g transform="translate(-28 -28) scale(.65)">${face}</g><text y="37" text-anchor="middle" fill="#bada9e" font-size="7">your AI, on tap.</text><path d="M12 49v42h34V57" fill="#ad792e" stroke="#dfb86d" stroke-width="2"/><path d="M18 49v37m7-37v37m7-37v37m7-37v37" stroke="#f0cb7c"/>`,
+  display: `<rect x="-62" y="-46" width="124" height="94" rx="20" fill="#14251d" stroke="#718575" stroke-width="4"/><g transform="translate(-28 -28) scale(.65)">${face}</g><text y="37" text-anchor="middle" fill="#bada9e" font-size="7">one little thing.</text><path d="M12 49v42h34V57" fill="#ad792e" stroke="#dfb86d" stroke-width="2"/><path d="M18 49v37m7-37v37m7-37v37m7-37v37" stroke="#f0cb7c"/>`,
   buttons: [-34, 0, 34].map((x, i) => `<g transform="translate(${x} ${i === 1 ? 7 : 0})"><rect x="-12" y="-10" width="24" height="24" rx="3" fill="#c5ccc1"/><circle r="11" fill="#576d43" stroke="#bccb99"/><text text-anchor="middle" y="4" fill="#e0edc6" font-size="${i === 1 ? 6 : 14}">${['■', 'TALK', '⇄'][i]}</text></g>`).join(''),
   pcb: `<path d="${outline}" transform="scale(.88)" fill="#205a45" stroke="#79a381" stroke-width="2"/>${traces}<g transform="translate(-22 -10)">${chip('I/O', 30, 27)}</g><text y="-70" text-anchor="middle" fill="#d1e6bf" font-size="9">MORI / M–01</text><path d="M-40 49h80" stroke="#d6d7af" stroke-width="8"/>${pads}`,
   compute: `<rect x="-30" y="-37" width="60" height="74" rx="3" fill="#244d37" stroke="#adbd98"/>${pads}<rect x="-26" y="-11" width="52" height="43" rx="3" fill="url(#metal)" stroke="#dfe5de"/><text y="5" text-anchor="middle" font-size="8" fill="#34483d">ESP32-S3</text><text y="18" text-anchor="middle" font-size="5" fill="#34483d">RADIO / COMPUTE</text><path d="M-22-18v-12h9v12h9v-12h9v12h9v-12" fill="none" stroke="#d5b873" stroke-width="3"/>`,

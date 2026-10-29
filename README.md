@@ -1,4 +1,8 @@
-# MORI — your AI, within reach
+# Mori · a little buddy for big days
+
+The October 29 design revision gives Mori a quieter ivory/sage landing page, a softer desk-friendly silhouette, interactive shell previews, and a flat heel with rear USB-C in the hardware study. The page focuses on the working browser demo and prototype updates; speculative accessory pricing and unbuilt memory features have been removed.
+
+See [the current hardware build brief](docs/HARDWARE_BUILD_BRIEF.md) for the USB-first architecture, component candidates, controls, device-service work, mechanical checks, and prototype gates. The model is an illustrative concept, **not fit-validated CAD or a production BOM**. Battery, motion and haptics remain later-stage provisions in the explorer.
 
 [Live site](https://mori-drab.vercel.app) · [GitHub repository (private)](https://github.com/HohJD/mori)
 
@@ -85,26 +89,13 @@ The 3D studio uses exactly pinned **Three.js 0.186.1** and **GSAP 3.15.0**
 
 ## One design system
 
-Every view shares the landing page's sticker-book look: Fredoka headings, 2px ink
-outlines, offset drop shadows, pill buttons and chips, lime for the chosen or
-primary thing, and a dotted paper background. `website/src/system.css` loads
-last; it maps the older colour tokens onto the shared palette and restyles common
-components (buttons, chips, inputs, cards, dialogs, header, footer) for Talk,
-Play, Device and Settings. Add new components with these tokens rather than new
-colours.
+The shared palette uses warm ivory, muted sage, fine borders, and restrained shadows. Fredoka gives the landing headlines a friendly character; DM Sans keeps supporting copy and app controls clear. `website/src/system.css` maps legacy tokens to the shared palette, then `website/src/refinement.css` applies the current design to the landing, Talk, Play, Device and Settings. Both light and dark themes remain supported.
 
 ## The landing page
 
-A fresh visit opens the **landing page** (`/` or `#home`): a sticker-book
-introduction to Mori as a desk buddy. The hero pebble is interactive (pat, nap,
-play, and eyes that follow the pointer), followed by moods, a day on your desk,
-the three-button controls, and the **Mori family** product lineup (`#lineup`):
-Pebble ($149), Nest desk dock ($29), Coats bumpers ($15), the optional Mori+ plan
-($8/month), and Mori Web, which is live today. Hardware prices are planned
-targets from the research brief, and the page says the hardware is not on sale.
-Markup lives in `website/index.html`; styles and behaviour in
-`website/src/landing.css` and `website/src/landing.js`. Headlines use the
-self-hosted Fredoka font.
+A fresh visit opens the **landing page** (`/` or `#home`). The hero has pat, nap and play reactions, pointer-following eyes, and accessible sage/cream/lavender previews. Preview finishes do not overwrite the saved companion shell. Moods introduce the personality; the physical-controls section and `#lineup` explain the proposed device and USB-first prototype. The page ends with a working waitlist flow. No accessory prices, shipping dates, or unbuilt cloud-memory claims are presented.
+
+Markup lives in `website/index.html`; behavior in `website/src/landing.js`; base layout in `website/src/landing.css`; current visual refinements in `website/src/refinement.css`. Fonts are self-hosted. The new browser regression checks finish previews, storage isolation, reactions and review screenshots alongside the existing responsive and accessibility checks.
 
 ### Waitlist
 
@@ -234,7 +225,7 @@ anything; the independent web console can use browser voice only when invited.
   portion. The labelled range also works with arrow, Home, and End keys. Selecting
   a component opens the model first, then highlights that actual part.
 - All **16** numbered selectors expose a name, function, and proposed material:
-  enclosure, bumper, lens, display/touch/flex, tactile buttons, PCB, compute/radio,
+  enclosure, bumper, lens, display/flex, tactile buttons, PCB, compute/radio,
   motion sensor, microphone, physical mute, speaker/amplifier, haptics, protected
   battery, USB-C/power system, rear shell/lanyard, and assembly/fasteners.
   Small screens use the same complete native select and previous/next controls.

@@ -4,7 +4,7 @@ export const hardwareParts = [
   {
     id: 'enclosure', name: 'Front enclosure', category: 'The outer world',
     material: 'Textured polymer',
-    description: 'A soft, seed-shaped home. A recessed window and three real button openings keep the face and controls within reach.',
+    description: 'A rounded, desk-friendly home with a broad, flat heel. A recessed window and three real button openings keep the face and controls within reach.',
   },
   {
     id: 'bumper', name: 'Replaceable bumper', category: 'A softer landing',
@@ -17,9 +17,9 @@ export const hardwareParts = [
     description: 'A transparent, rounded cover sits above the display. Scratch resistance, sealing, and the final optical stack still need testing.',
   },
   {
-    id: 'display', name: 'IPS display & touch', category: 'A little expression',
-    material: 'IPS panel · touch layer · flex',
-    description: 'An ST7789-family color display is proposed for the familiar pixel face. A flexible ribbon and matching touch controller connect it to the board.',
+    id: 'display', name: 'IPS display & flex', category: 'A little expression',
+    material: '1.69″ ST7789V2 IPS · SPI · flex',
+    description: 'A standard 240 × 280 display is the prototype candidate, rotated to landscape. Physical buttons handle input, so v1 does not require a touch controller. Module fit and mounting still need CAD verification.',
   },
   {
     id: 'buttons', name: 'Three tactile buttons', category: 'Small, deliberate actions',
@@ -34,7 +34,7 @@ export const hardwareParts = [
   {
     id: 'compute', name: 'Compute & radio', category: 'A little mind',
     material: 'ESP32-S3 module · RF shield',
-    description: 'An ESP32-S3 module is the candidate for local animation and connectivity. Module variant, memory, and antenna clearance are not final.',
+    description: 'An ESP32-S3 module with PSRAM is the candidate for animation, Wi-Fi, and audio transport. AI runs through a server, not on this microcontroller. Antenna keep-out and GPIO allocation need validation.',
   },
   {
     id: 'motion', name: 'Motion sensing', category: 'A sense of the moment',
@@ -59,12 +59,12 @@ export const hardwareParts = [
   {
     id: 'haptic', name: 'Haptic feedback', category: 'A gentle hello',
     material: 'LRA actuator · haptic driver',
-    description: 'A miniature linear actuator with a DRV2605L-class driver is proposed for a gentle purr. Resonance and drive strength need real-world tuning.',
+    description: 'Optional after the USB-powered prototype: a miniature linear actuator with a DRV2605L-class driver for a gentle purr. Resonance and drive strength need real-world tuning.',
   },
   {
     id: 'battery', name: 'Protected battery', category: 'A little stored energy',
     material: 'Protected single-cell Li-ion',
-    description: 'A supplier-documented cell would include protection and temperature sensing. Cell size, capacity, charging limits, and runtime are not validated.',
+    description: 'Optional second-stage build: a supplier-documented cell with protection and temperature sensing. The first prototype is USB powered. Cell size, capacity, charging limits, and runtime are not validated.',
   },
   {
     id: 'power', name: 'USB-C & power', category: 'Rest, recharge, repeat',
@@ -72,9 +72,9 @@ export const hardwareParts = [
     description: 'A USB-C input, power-path charger, buck-boost rail, and fuel gauge form the proposed power system. ESD, current limits, and thermal safety need review.',
   },
   {
-    id: 'rear', name: 'Rear shell & lanyard', category: 'Made to come along',
+    id: 'rear', name: 'Rear shell & desk base', category: 'Made to come along',
     material: 'Textured polymer · woven loop',
-    description: 'A separate rear cover makes room for the battery and speaker cavity. A lanyard loop adds a familiar little carrying detail.',
+    description: 'A screw-fastened rear cover, broad silicone heel, and rear USB-C opening give Mori a stable home on a desk. The carrying loop stays optional; tipping resistance and cable clearance need testing.',
   },
   {
     id: 'fasteners', name: 'Assembly & fasteners', category: 'Held, not sealed away',

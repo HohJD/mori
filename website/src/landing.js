@@ -94,6 +94,17 @@ export function initLanding(reducedMotion) {
     if (button) act(button.dataset.lpAction);
   });
 
+  const finishNames = { sage: 'Sage', cream: 'Cream', lavender: 'Lavender' };
+  root.querySelectorAll('[data-lp-finish]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const finish = button.dataset.lpFinish;
+      // Preview is deliberately local to the hero; adoption owns saved shell choice.
+      pebble.dataset.finish = finish;
+      root.querySelector('[data-lp-finish-label]').textContent = finishNames[finish];
+      root.querySelectorAll('[data-lp-finish]').forEach((option) => option.setAttribute('aria-pressed', String(option === button)));
+    });
+  });
+
   // Every visible Mori glances toward the pointer. One rAF per frame, at most.
   let frame = 0;
   let pointer = null;

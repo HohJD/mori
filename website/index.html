@@ -32,18 +32,14 @@
         <section class="lp-hero" id="home" aria-labelledby="home-title">
           <div class="lp-wrap lp-hero-grid">
             <div class="lp-hero-copy">
-              <p class="lp-pill"><span class="lp-pill-dot" aria-hidden="true"></span>A desk buddy with a tiny heart</p>
-              <h1 id="home-title" tabindex="-1" data-view-heading>Your tiny<br><span class="lp-mark">desk buddy.</span></h1>
-              <p class="lp-lede">Mori is a pocket-sized pebble with a little pixel friend inside. It sits by your laptop, keeps you company through focus sessions, cheers your small wins, and naps when you do.</p>
+              <p class="lp-pill"><span class="lp-pill-dot" aria-hidden="true"></span>A little company. A little more focus.</p>
+              <h1 id="home-title" tabindex="-1" data-view-heading>A little buddy.<br><span class="lp-mark">For big days.</span></h1>
+              <p class="lp-lede">Meet Mori, the tiny desk companion that helps you start, stay focused, and celebrate getting things done. A little presence beside your laptop. A little less doing it alone.</p>
               <div class="lp-cta-row">
-                <a class="lp-btn lp-btn-main" href="#play">Adopt one in your browser <span aria-hidden="true">→</span></a>
+                <a class="lp-btn lp-btn-main" href="#play">Meet your Mori <span aria-hidden="true">→</span></a>
                 <a class="lp-btn lp-btn-ghost" href="#waitlist">Join the waitlist</a>
               </div>
-              <ul class="lp-hero-facts" aria-label="Quick facts">
-                <li><b>75 mm</b><span>palm sized</span></li>
-                <li><b>3</b><span>squishy buttons</span></li>
-                <li><b>0</b><span>cameras, ever</span></li>
-              </ul>
+              <p class="lp-hero-note">Try the free browser companion. Hardware is in development.</p>
             </div>
 
             <div class="lp-stage" aria-label="Interactive Mori. Use the buttons to pat, nap, or play.">
@@ -55,7 +51,7 @@
 
               <div class="lp-pebble" data-lp-pebble>
                 <div class="lp-pebble-shell">
-                  <span class="lp-lanyard" aria-hidden="true"></span>
+                  <span class="lp-lanyard" aria-hidden="true"></span><span class="lp-device-wordmark" aria-hidden="true">mori</span><span class="lp-mic-indicator" aria-hidden="true"></span>
                   <button type="button" class="lp-screen" data-lp-action="pat" aria-label="Pat Mori">
                     <span class="lp-room" aria-hidden="true">
                       <span class="lp-window"></span>
@@ -76,6 +72,7 @@
               </div>
               <p class="lp-bubble" data-lp-bubble aria-live="polite">oh hi! got a little time?</p>
 
+              <div class="lp-finish-picker" role="group" aria-label="Preview a shell finish"><button type="button" data-lp-finish="sage" aria-label="Sage finish" aria-pressed="true" style="--finish:#b9c8a6"></button><button type="button" data-lp-finish="cream" aria-label="Cream finish" aria-pressed="false" style="--finish:#e8d9bd"></button><button type="button" data-lp-finish="lavender" aria-label="Lavender finish" aria-pressed="false" style="--finish:#c7bdd9"></button><span data-lp-finish-label>Sage</span></div>
               <div class="lp-desk" aria-hidden="true">
                 <span class="lp-mug"><i></i></span>
                 <span class="lp-note">finish<br>slides ✓</span>
@@ -84,19 +81,13 @@
           </div>
         </section>
 
-        <div class="lp-ribbon" aria-hidden="true">
-          <div class="lp-ribbon-track">
-            <span>focus buddy</span><b>✦</b><span>tiny wins</span><b>✦</b><span>head pats</span><b>✦</b><span>naps on cue</span><b>✦</b><span>no guilt, ever</span><b>✦</b><span>works offline</span><b>✦</b>
-            <span>focus buddy</span><b>✦</b><span>tiny wins</span><b>✦</b><span>head pats</span><b>✦</b><span>naps on cue</span><b>✦</b><span>no guilt, ever</span><b>✦</b><span>works offline</span><b>✦</b>
-          </div>
-        </div>
-
+        <div class="lp-value-strip lp-wrap"><span>A friend for your focus</span><span>No streaks. No guilt.</span><span>Small wins count here.</span></div>
         <section class="lp-section" id="moods" aria-labelledby="moods-title">
           <div class="lp-wrap">
             <header class="lp-head lp-reveal">
               <p class="lp-kicker">Meet Mori</p>
-              <h2 id="moods-title">Lots of feelings.<br><span class="lp-under">Zero drama.</span></h2>
-              <p>Mori is curious, a bit mischievous, and quietly proud of you. Every mood is drawn by hand, so a pat always feels like a pat. Hover a tile to say hi.</p>
+              <h2 id="moods-title">Small friend. <span class="lp-under">Full of personality.</span></h2>
+              <p>A head pat, a quiet focus session, a tiny victory dance. The everyday moments, made a little sweeter.</p>
             </header>
             <ul class="lp-moods">
               <li class="lp-mood lp-reveal" style="--tile: var(--lp-sage)"><span data-lp-creature data-mood="happy"></span><b>Happy</b><small>You came back!</small></li>
@@ -106,21 +97,6 @@
               <li class="lp-mood lp-reveal" style="--tile: var(--lp-sky)"><span data-lp-creature data-mood="listen"></span><b>Listening</b><small>Hold to talk.</small></li>
               <li class="lp-mood lp-reveal" style="--tile: var(--lp-lime-soft)"><span data-lp-creature data-mood="curious"></span><b>Curious</b><small>Found a tiny rock.</small></li>
             </ul>
-          </div>
-        </section>
-
-        <section class="lp-section lp-day" id="day" aria-labelledby="day-title">
-          <div class="lp-wrap">
-            <header class="lp-head lp-reveal">
-              <p class="lp-kicker">A day on your desk</p>
-              <h2 id="day-title">It gets you started.<br><span class="lp-under">Then it gets out of the way.</span></h2>
-            </header>
-            <ol class="lp-timeline">
-              <li class="lp-step lp-reveal"><time>09:00</time><h3>Good morning, human</h3><p>Mori stretches, waves, and asks for one thing you want done today. Just one.</p><span class="lp-step-icon" aria-hidden="true">☀</span></li>
-              <li class="lp-step lp-reveal"><time>10:30</time><h3>Focus, side by side</h3><p>Pick 5, 15, or 25 minutes. Mori pulls out a tiny notebook and works next to you.</p><span class="lp-step-icon" aria-hidden="true">✎</span></li>
-              <li class="lp-step lp-reveal"><time>13:00</time><h3>Lunch nap</h3><p>Pop it in the Nest. It curls up, charges, and leaves you alone. Respectfully.</p><span class="lp-step-icon" aria-hidden="true">☾</span></li>
-              <li class="lp-step lp-reveal"><time>17:30</time><h3>Tiny victory dance</h3><p>Say yes, it's done. Mori celebrates and adds a souvenir to its little room.</p><span class="lp-step-icon" aria-hidden="true">✦</span></li>
-            </ol>
           </div>
         </section>
 
@@ -138,67 +114,24 @@
             </div>
             <div class="lp-how-copy">
               <header class="lp-head lp-reveal">
-                <p class="lp-kicker">How it works</p>
-                <h2 id="how-title">Three buttons.<br><span class="lp-under">That's the manual.</span></h2>
+                <p class="lp-kicker">The physical Mori · in development</p>
+                <h2 id="how-title">Thoughtfully little.<br><span class="lp-under">Useful by design.</span></h2>
               </header>
               <ul class="lp-promises">
-                <li class="lp-reveal"><b>No camera. A real mute.</b><span>A physical switch cuts the microphone. The little light matches what the hardware is actually doing.</span></li>
-                <li class="lp-reveal"><b>Works offline.</b><span>Pats, games, timers, and naps all run on the device. Wi-Fi is only for chatting.</span></li>
+                <li class="lp-reveal"><b>No camera. A real mute.</b><span>Planned: push-to-talk, a physical mic-off switch, and a visible recording light. No camera.</span></li>
+                <li class="lp-reveal"><b>Focus first. Chat when you choose.</b><span>On-device timers and expressions are planned to work without Wi-Fi. AI conversations need a connection.</span></li>
                 <li class="lp-reveal"><b>Never dies of neglect.</b><span>Busy week? Mori is just happy to see you. No streaks, no guilt, no sad pixels.</span></li>
-                <li class="lp-reveal"><b>Your memories, your call.</b><span>See, edit, or delete what Mori remembers. Cancel a plan and your buddy stays.</span></li>
+                <li class="lp-reveal"><b>A proper place on your desk.</b><span>A flat, grippy base, rear USB-C, and a gently tilted face. Designed to stay put and look up at you.</span></li>
               </ul>
               <a class="lp-btn lp-btn-ghost lp-how-link lp-reveal" href="#inside">Explore every part in 3D <span aria-hidden="true">→</span></a>
             </div>
           </div>
         </section>
 
-        <section class="lp-section lp-lineup" id="lineup" aria-labelledby="lineup-title">
-          <div class="lp-wrap">
-            <header class="lp-head lp-reveal">
-              <p class="lp-kicker">The Mori family</p>
-              <h2 id="lineup-title">Start small.<br><span class="lp-under">Add a little cozy.</span></h2>
-              <p>Everything here uses parts that exist today: an ESP32 board, a 1.8" color screen, a small battery, and a speaker. Prices are our planned targets while we prototype.</p>
-            </header>
-            <div class="lp-products">
-              <article class="lp-product lp-product-hero lp-reveal">
-                <span class="lp-tag">The buddy</span>
-                <div class="lp-product-art lp-art-pebble" aria-hidden="true"><span class="lp-art-screen"><span data-lp-creature data-mood="happy"></span></span><span class="lp-art-keys"><i></i><i></i><i></i></span></div>
-                <h3>Mori Pebble</h3>
-                <p>The little friend itself. Fits in a palm, lives on your desk, comes along in a bag.</p>
-                <ul class="lp-specs"><li>75 × 65 × 28 mm, under 100 g</li><li>1.8" color screen with a living room inside</li><li>3 tactile buttons + haptic purr</li><li>Mic with hardware mute, speaker, USB-C</li></ul>
-                <p class="lp-colorways"><i style="--c: #c4cdb1"></i><i style="--c: #ecdfc4"></i><i style="--c: #c8bedb"></i><span>Sage, cream, lavender</span></p>
-                <p class="lp-price"><b>$149</b><span>planned price</span></p>
-              </article>
-              <article class="lp-product lp-reveal" style="--card: var(--lp-cream)">
-                <span class="lp-tag">Desk dock</span>
-                <div class="lp-product-art lp-art-nest" aria-hidden="true"><span class="lp-nest-pebble"><span data-lp-creature data-mood="sleepy"></span></span><span class="lp-nest-base"></span></div>
-                <h3>Mori Nest</h3>
-                <p>A weighted ceramic bed with USB-C passthrough. Set Mori in it and it curls up to nap and charge.</p>
-                <p class="lp-price"><b>$29</b><span>planned price</span></p>
-              </article>
-              <article class="lp-product lp-reveal" style="--card: var(--lp-lavender)">
-                <span class="lp-tag">Outfits</span>
-                <div class="lp-product-art lp-art-coats" aria-hidden="true"><i style="--c: #c4cdb1"></i><i style="--c: #ecdfc4"></i><i style="--c: #c8bedb"></i></div>
-                <h3>Mori Coats</h3>
-                <p>Swappable silicone bumpers in sage, cream, and lavender. Drop-friendly and very squeezable.</p>
-                <p class="lp-price"><b>$15</b><span>planned price</span></p>
-              </article>
-              <article class="lp-product lp-reveal" style="--card: var(--lp-sky)">
-                <span class="lp-tag">Optional plan</span>
-                <div class="lp-product-art lp-art-plus" aria-hidden="true"><span class="lp-plus-bubble">hey, want to plan tomorrow?</span><span data-lp-creature data-mood="listen"></span></div>
-                <h3>Mori+</h3>
-                <p>Hold to talk. Mori helps you plan, remembers your goals, and checks in once. Skip it and Mori still plays.</p>
-                <p class="lp-price"><b>$8</b><span>/ month, planned</span></p>
-              </article>
-              <article class="lp-product lp-product-free lp-reveal">
-                <span class="lp-tag lp-tag-live">Live today</span>
-                <div class="lp-product-art lp-art-web" aria-hidden="true"><span class="lp-browser"><i></i><i></i><i></i><span data-lp-creature data-mood="party"></span></span></div>
-                <h3>Mori Web</h3>
-                <p>Name your Mori, feed it, pat it, and run real focus sessions right in this browser. No sign up.</p>
-                <a class="lp-btn lp-btn-main" href="#play">Play now <span aria-hidden="true">→</span></a>
-              </article>
-            </div>
-            <p class="lp-fineprint lp-reveal">Mori hardware is a prototype in progress and isn't on sale yet. Prices, sizes, and features are design targets and may change after testing. <a href="#waitlist">Join the waitlist</a> to hear first.</p>
+        <section class="lp-section lp-build" id="lineup" aria-labelledby="lineup-title">
+          <div class="lp-wrap lp-build-grid">
+            <div><p class="lp-kicker">One buddy. A thoughtful first build.</p><h2 id="lineup-title">Small by design.<br>Real parts inside.</h2><p>We’re starting with one useful little companion, built around available components. The browser experience is ready to meet you. The physical Mori is still a design concept.</p><a class="lp-btn lp-btn-ghost" href="#inside">See the hardware study <span aria-hidden="true">↗</span></a></div>
+            <div class="lp-build-details"><div><span>01 / Expression</span><b>Color display + tactile buttons</b><p>A standard 1.69″ display, a friendly pixel face, and controls you can feel.</p></div><div><span>02 / Connection</span><b>Wi-Fi + push-to-talk</b><p>ESP32-S3 candidate, microphone, speaker, and a physical mic-off switch.</p></div><div><span>03 / Everyday life</span><b>USB-C + a stable little base</b><p>USB-powered prototype first. Battery and gentle haptics follow fit and power testing.</p></div><p class="lp-fineprint">Target envelope: 68 × 76 × 34 mm (W × H × D). Fit, sound, thermals, and runtime still need physical validation. No preorders or shipping claims.</p></div>
           </div>
         </section>
 
@@ -207,17 +140,14 @@
             <div class="lp-final-card lp-reveal" data-lp-waitlist>
               <span class="lp-final-creature" data-lp-creature data-mood="party"></span>
               <div class="lp-final-body">
-                <p class="lp-final-kicker">First batch waitlist</p>
-                <h2 id="final-title" tabindex="-1">Your desk is<br>a little lonely.</h2>
-                <p>Get on the list for the first Mori batch. We'll email you when prototypes are ready to try and before preorders open. No spam, just Mori news.</p>
+                <p class="lp-final-kicker">A little hello, when we’re ready</p>
+                <h2 id="final-title" tabindex="-1">Make room for<br>a little friend.</h2>
+                <p>Follow Mori from little idea to desk buddy. Join for prototype updates and a chance to try the first batch.</p>
                 <form class="lp-waitlist" id="waitlist-form" novalidate>
                   <fieldset class="lp-interest">
                     <legend>I'm most excited about</legend>
                     <label><input type="radio" name="interest" value="everything" checked><span>All of it</span></label>
                     <label><input type="radio" name="interest" value="pebble"><span>Pebble</span></label>
-                    <label><input type="radio" name="interest" value="nest"><span>Nest</span></label>
-                    <label><input type="radio" name="interest" value="coats"><span>Coats</span></label>
-                    <label><input type="radio" name="interest" value="plus"><span>Mori+</span></label>
                   </fieldset>
                   <div class="lp-waitlist-row">
                     <label class="lp-visually-hidden" for="waitlist-email">Email address</label>
@@ -354,7 +284,7 @@
               <div class="hardware-part-detail" aria-live="polite" aria-atomic="true">
                 <p class="eyebrow lime" data-part-category>01 / The outer world</p>
                 <h4 data-part-title>Front enclosure</h4>
-                <p data-part-description>A soft, seed-shaped home for a little personality.</p>
+                <p data-part-description>A rounded little home with a stable desk base.</p>
                 <p class="hardware-material"><span>Proposed</span><strong data-part-material>Textured polymer</strong></p>
               </div>
               <button type="button" class="hardware-isolate" data-isolate aria-pressed="false">Look closer <span aria-hidden="true">↗</span></button>
